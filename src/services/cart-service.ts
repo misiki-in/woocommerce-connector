@@ -1,44 +1,128 @@
 import type { Cart, CartLineItem } from "../types";
-import { PaginatedResponse } from "../types/api-response";
-import { transformFromAddress, transformIntoAddress } from "./address-service";
 import { BaseService } from "./base-service";
 
-type CartResponse = PaginatedResponse<{
-  cart: Cart;
-}>;
-
-export function transformIntoLineItem(item: Record<string, any>) {
-  return {
-    ...item,
-    subtotal: item.unit_price * item.quantity,
-    total: item.unit_price * item.quantity,
-    qty: item.quantity,
-    slug: item.product_handle,
-    description: item.product_description,
-    productId: item.product_id,
-    sku: item.variant_sku,
-    variantId: item.variant_id,
-    variant: {
-      id: item.variant_id,
-      title: item.variant_title,
-    },
-    price: item.unit_price,
-    isSelectedForCheckout: true,
-  };
+type WooCommerceCartResponse = {
+  id: string
+  key: string
+  currency: {
+    code: string
+    symbol: string
+  }
+  prices_include_tax: boolean
+  items: Array<{
+    key: string
+    id: number
+    type: string
+    quantity: number
+    variation: Array<{
+      attribute: string
+      value: string
+    }>
+   _totals: {
+      raw: number
+      formatted: string
+    }
+    product: {
+      id: number
+      name: string
+      slug: string
+      images: Array<{
+        id: number
+        src: string
+      }>
+    }
+    totals: {
+      line_total: number
+      line_total_currency: string
+      total: number
+      total_currency: string
+    }
+  }>
+  coupons: Array<{
+    code: string
+    totles: {
+      discount: number
+      discount_tax: number
+    }
+  }>
+  fees: Array<any>
+  itemsWeight: number
+  needsPayment: boolean
+  needsShipping: boolean
+  shipping: {
+    packages: Array<{
+      package_details: string
+      package_items: Array<any>
+      package_rate: Array<{
+        id: string
+        label: string
+        cost: number
+        method_id: string
+      }>
+    }>
+    showPackageDetails: boolean
+    showShippingCalculator: boolean
+    shippingClasses: Array<any>
+  }
+  totals: {
+    subtotal: string
+    subtotal_tax: string
+    shipping_total: string
+    shipping_tax: string
+    fees_total: string
+    fees_tax: string
+    discount_total: string
+    discount_tax: string
+    total: string
+    total_tax: string
+  }
+  errors: Array<any>
 }
 
-function transformIntoCart(cart: Record<string, any>) {
+export function transformIntoLineItem(item: WooCommerceCartResponse['items'][0]): CartLineItem {
   return {
-    ...cart,
-    phone: cart?.metadata?.phone,
-    shippingAddress: transformIntoAddress(cart?.shipping_address),
-    shippingAddressId: cart?.shipping_address_id,
-    billingAddressId: cart?.billing_address_id,
-    billingAddress: transformIntoAddress(cart?.billing_address),
-    qty: cart?.items.reduce((a: number, b: any) => a + b.quantity, 0),
-    shippingRateId: cart?.shipping_methods?.[0]?.shipping_option_id || null,
-    lineItems: cart?.items?.map(transformIntoLineItem),
-  };
+    id: item.key,
+    productId: item.product.id.toString(),
+    variantId: item.id.toString(),
+    sku: '',
+    title: item.product.name,
+    slug: item.product.slug,
+    qty: item.quantity,
+    price: item._totals.raw,
+    total: item.totals.line_total,
+    subtotal: item._totals.raw,
+    description: '',
+    thumbnail: item.product.images?.[0]?.src || '',
+    images: item.product.images?.map(img => img.src) || [],
+    isSelectedForCheckout: true,
+    variant: {
+      id: item.id.toString(),
+      title: item.variation?.map(v => `${v.attribute}: ${v.value}`).join(', ') || '',
+      price: item._totals.raw,
+      sku: ''
+    }
+  }
+}
+
+function transformIntoCart(cart: WooCommerceCartResponse): Cart {
+  return {
+    id: cart.id,
+    key: cart.key,
+    currency: cart.currency.code,
+    qty: cart.items.reduce((a: number, b: any) => a + b.quantity, 0),
+    subtotal: parseFloat(cart.totals.subtotal) || 0,
+    tax: parseFloat(cart.totals.total_tax) || 0,
+    discount: parseFloat(cart.totals.discount_total) || 0,
+    total: parseFloat(cart.totals.total) || 0,
+    shippingCharges: parseFloat(cart.totals.shipping_total) || 0,
+    lineItems: cart.items.map(transformIntoLineItem),
+    coupons: cart.coupons,
+    fees: cart.fees,
+    needsPayment: cart.needsPayment,
+    needsShipping: cart.needsShipping,
+    itemsWeight: cart.itemsWeight,
+    errors: cart.errors
+  }
 }
 
 export class CartService extends BaseService {
@@ -51,58 +135,84 @@ export class CartService extends BaseService {
     return CartService.instance;
   }
 
+  /**
+   * Ensure a cart exists and return the cart ID
+   * Uses WooCommerce Store API to create/get a cart
+   */
   async ensureCartId(cartId: string | null | undefined): Promise<string> {
-    if (cartId === undefined || cartId === "undefined") {
-      cartId = localStorage.getItem("cart_id") || null;
+    if (cartId === undefined || cartId === "undefined" || !cartId) {
+      // Try to get cart from localStorage
+      cartId = typeof localStorage !== 'undefined' ? localStorage.getItem("cart_id") || null : null;
     }
+    
     if (!cartId) {
-      const cartRes = await this.post<CartResponse>("/wp-json/wc/store/v1/cart", {
-        // WooCommerce Store API doesn't require region_id
-      });
-
-      cartId = cartRes?.cart?.id || (cartRes as any)?.id;
+      // Create a new cart using WooCommerce Store API
+      const cartRes = await this.post<{ id: string; key: string }>(
+        "/wp-json/wc/store/v1/cart",
+        {}
+      );
+      cartId = cartRes?.id || cartRes?.key;
+      
+      if (cartId && typeof localStorage !== 'undefined') {
+        localStorage.setItem("cart_id", cartId);
+      }
     }
+    
     if (typeof cartId != "string" || !cartId) {
-      throw "Couldnot ensure cartId"
-      return ""
+      throw new Error("Could not ensure cartId");
     }
-    localStorage.setItem("cart_id", cartId || "");
 
     return cartId;
   }
 
+  /**
+   * Fetch current cart data
+   */
   async fetchCartData() {
-    const cartId = localStorage.getItem("cart_id") || null;
+    const cartId = typeof localStorage !== 'undefined' ? localStorage.getItem("cart_id") || null : null;
     if (!cartId) return null;
 
-    const res = await this.get<CartResponse>(`/store/carts/${cartId}`);
+    const cart = await this.get<WooCommerceCartResponse>("/wp-json/wc/store/v1/cart");
+    
+    if (!cart) return null;
+    
     return {
-      ...res?.cart,
-      lineItems: res?.cart?.items?.map((item) => {
-        return {
-          ...item,
-          title: item.product.title,
-        };
-      }),
+      ...transformIntoCart(cart),
+      lineItems: cart.items.map((item) => ({
+        ...transformIntoLineItem(item),
+        title: item.product.title
+      }))
     };
   }
 
+  /**
+   * Refresh/regenerate the cart
+   */
   async refereshCart() {
-    const res = await this.post<CartResponse>("/wp-json/wc/store/v1/cart", {
-        // WooCommerce Store API doesn't require region_id
-    });
-    localStorage.setItem('cart_id', res.cart?.id)
-    return transformIntoCart(res.cart)
+    const cartRes = await this.post<WooCommerceCartResponse>("/wp-json/wc/store/v1/cart", {});
+    const cartId = cartRes?.id || cartRes?.key;
+    
+    if (cartId && typeof localStorage !== 'undefined') {
+      localStorage.setItem('cart_id', cartId);
+    }
+    
+    return transformIntoCart(cartRes);
   }
 
+  /**
+   * Get cart by cart ID (WooCommerce Store API uses session cookie, not cart ID in URL)
+   */
   async getCartByCartId(cartId: string) {
-    const res = await this.get<CartResponse>(`/wp-json/wc/store/v1/cart`);
-
-    console.log("fetched cart", res);
-    return transformIntoCart(res.cart);
+    const cart = await this.get<WooCommerceCartResponse>("/wp-json/wc/store/v1/cart");
+    console.log("fetched cart", cart);
+    return transformIntoCart(cart);
   }
 
+  /**
+   * Add item to cart
+   */
   async addToCart({
+    productId,
     variantId,
     qty,
     cartId,
@@ -115,45 +225,21 @@ export class CartService extends BaseService {
     lineId: string | null;
   }) {
     cartId = await this.ensureCartId(cartId);
-    const res = await this.post<CartResponse>(
+    
+    const res = await this.post<WooCommerceCartResponse>(
       `/wp-json/wc/store/v1/cart/add-item`,
       {
-        id: variantId,
+        id: variantId || productId,
         quantity: qty,
       }
     );
 
-    return transformIntoCart(res.cart);
-
-    /*
-    let res;
-    if (body.quantity === -9999999) {
-      res = await this.delete<{ deleted: boolean }>(
-        `/store/carts/${cartId}/line-items/${lineId}`
-      );
-    } else {
-      if (lineId) {
-        res = await this.post<CartResponse>(
-          `/wp-json/wc/store/v1/cart/update-item?key=${lineId}`,
-          body
-        );
-      } else {
-        res = await this.post<CartResponse>(
-          `/wp-json/wc/store/v1/cart/add-item`,
-          body
-        );
-      }
-      cartId = res?.cart?.id || (res as any)?.id;
-    }
-    if (cartId) {
-      res = await this.get<CartResponse>(`/wp-json/wc/store/v1/cart`);
-      localStorage.setItem("cart_id", cartId);
-    }
-
-    return transformCart("cart" in res ? res.cart : res);
-    */
+    return transformIntoCart(res);
   }
 
+  /**
+   * Remove item from cart
+   */
   async removeCart({
     cartId,
     lineId = null,
@@ -162,51 +248,21 @@ export class CartService extends BaseService {
     lineId: string | null;
   }) {
     cartId = await this.ensureCartId(cartId);
-    const res = await this.delete<CartResponse>(
-      `/wp-json/wc/store/v1/cart/remove-item?key=${lineId}`,
+    
+    if (!lineId) {
+      throw new Error("Line item ID is required to remove from cart");
+    }
+    
+    const res = await this.delete<WooCommerceCartResponse>(
+      `/wp-json/wc/store/v1/cart/remove-item?key=${lineId}`
     );
 
-    return transformIntoCart(res.cart);
-
-    /*
-    if (cartId === undefined || cartId === "undefined") {
-      cartId = localStorage.getItem("cart_id") || "";
-    }
-
-    let res: any = {};
-    if (!cartId) {
-      const cartRes = await this.post<CartResponse>("/wp-json/wc/store/v1/cart", {
-        // WooCommerce Store API doesn't require region_id
-      });
-      cartId = cartRes?.cart?.id || (cartRes as any)?.id;
-    }
-    localStorage.setItem("cart_id", cartId);
-
-    if (lineId) {
-      res = await this.delete<{ deleted: boolean }>(
-        `/store/carts/${cartId}/line-items/${lineId}`
-      );
-    }
-    if (cartId) {
-      res = await this.post<CartResponse>(`/wp-json/wc/store/v1/cart`, {
-        customer_id: res?.id,
-      });
-    }
-
-    if (!res) return {};
-
-    return {
-      ...res?.cart,
-      lineItems: res?.cart?.items?.map((item: any) => {
-        return {
-          ...item,
-          title: item.product_title,
-        };
-      }),
-    };
-    */
+    return transformIntoCart(res);
   }
 
+  /**
+   * Apply coupon to cart
+   */
   async applyCoupon({
     cartId,
     couponCode,
@@ -214,7 +270,9 @@ export class CartService extends BaseService {
     cartId: string;
     couponCode: string;
   }) {
-    const res = await this.post<CartResponse>(
+    cartId = await this.ensureCartId(cartId);
+    
+    const res = await this.post<WooCommerceCartResponse>(
       `/wp-json/wc/store/v1/cart/apply-coupon`,
       {
         code: couponCode,
@@ -222,16 +280,17 @@ export class CartService extends BaseService {
     );
 
     return {
-      ...res?.cart,
-      lineItems: res?.cart?.items?.map((item) => {
-        return {
-          ...item,
-          title: item.product.title,
-        };
-      }),
+      ...transformIntoCart(res),
+      lineItems: res.items.map((item) => ({
+        ...transformIntoLineItem(item),
+        title: item.product.title
+      }))
     };
   }
 
+  /**
+   * Remove coupon from cart
+   */
   async removeCoupon({
     cartId,
     promotionId,
@@ -239,12 +298,17 @@ export class CartService extends BaseService {
     cartId: string;
     promotionId: string;
   }) {
+    cartId = await this.ensureCartId(cartId);
+    
     const res = await this.delete<{ deleted: boolean }>(
       `/wp-json/wc/store/v1/cart/remove-coupon?code=${promotionId}`
     );
     return res;
   }
 
+  /**
+   * Update cart with customer info, shipping address, and billing address
+   */
   async updateCart2({
     cartId,
     email,
@@ -255,10 +319,10 @@ export class CartService extends BaseService {
     isBillingAddressSameAsShipping,
   }: any) {
     cartId = await this.ensureCartId(cartId);
-    let cartResponse: any = null
+    let cartResponse: any = null;
 
-    console.log("updating email and phone")
-    console.log(cartId, email, billingAddress, shippingAddress)
+    console.log("updating email and phone");
+
     // Update customer information
     if (email || customer_id || phone) {
       cartResponse = await this.post(`/wp-json/wc/store/v1/cart/update-customer`, {
@@ -270,47 +334,46 @@ export class CartService extends BaseService {
       });
     }
 
-    console.log("called shipping", shippingAddress)
+    console.log("called shipping", shippingAddress);
+
     // Process shipping address
-    let shippingAddressId = null
+    let shippingAddressId = null;
     if (shippingAddress) {
-      const shippingAddressData = transformFromAddress(shippingAddress)
+      const shippingAddressData = transformFromAddress(shippingAddress);
       cartResponse = await this.post(`/wp-json/wc/store/v1/cart/update-customer`, {
         shipping_address: shippingAddressData,
       });
-      shippingAddressId = cartResponse?.cart?.shipping_address_id || null
+      shippingAddressId = cartResponse?.shipping_address_id || null;
     }
 
     // Process billing address
-    console.log("called billinng", billingAddress)
+    console.log("called billing", billingAddress);
     if (billingAddress && !isBillingAddressSameAsShipping) {
-      const billingAddressData = transformFromAddress(billingAddress)
+      const billingAddressData = transformFromAddress(billingAddress);
       cartResponse = await this.post(`/wp-json/wc/store/v1/cart/update-customer`, {
         billing_address: billingAddressData,
       });
-    }
-    /*else if (shippingAddressId && isBillingAddressSameAsShipping) {
-      // Use shipping address as billing address
-      cartResponse = await this.post(`/wp-json/wc/store/v1/cart/update-customer`, {
-        billing_address: {
-          id: shippingAddressId
-        },
-      });
-    } */
-    else if (shippingAddress && isBillingAddressSameAsShipping) {
-      const shippingAddressData = transformFromAddress(shippingAddress)
+    } else if (shippingAddress && isBillingAddressSameAsShipping) {
+      const shippingAddressData = transformFromAddress(shippingAddress);
       cartResponse = await this.post(`/wp-json/wc/store/v1/cart/update-customer`, {
         billing_address: shippingAddressData,
       });
     }
 
-    return transformIntoCart(cartResponse.cart)
+    return transformIntoCart(cartResponse);
   }
 
+  /**
+   * Complete the cart checkout
+   */
   async completeCart(cart_id: string) {
-    return this.post<Cart>(`/wp-json/wc/store/v1/cart/checkout`, {});
+    cart_id = await this.ensureCartId(cart_id);
+    return this.post(`/wp-json/wc/store/v1/cart/checkout`, {});
   }
 
+  /**
+   * Update cart item quantity or add new items
+   */
   async updateCart({
     qty,
     cartId,
@@ -326,26 +389,31 @@ export class CartService extends BaseService {
     };
 
     if (!lineId) {
-      const res = await this.post<CartResponse>(
+      // Add new item
+      const res = await this.post<WooCommerceCartResponse>(
         `/wp-json/wc/store/v1/cart/add-item`,
         body
       );
-      return transformIntoCart(res.cart)
+      return transformIntoCart(res);
     } else if (qty) {
-      const res = await this.post<CartResponse>(
+      // Update existing item
+      const res = await this.post<WooCommerceCartResponse>(
         `/wp-json/wc/store/v1/cart/update-item?key=${lineId}`,
         body
       );
-      return transformIntoCart(res.cart)
+      return transformIntoCart(res);
     } else {
+      // Remove item
       const res = await this.delete<{ parent: any }>(
-        `/wp-json/wc/store/v1/cart/remove-item?key=${lineId}`,
-      )
-      return transformIntoCart(res.parent)
+        `/wp-json/wc/store/v1/cart/remove-item?key=${lineId}`
+      );
+      return transformIntoCart(res.parent);
     }
-
   }
 
+  /**
+   * Update shipping rate selection
+   */
   async updateShippingRate({
     cartId,
     shippingRateId,
@@ -353,14 +421,31 @@ export class CartService extends BaseService {
     cartId: string;
     shippingRateId: string;
   }) {
-    const res = await this.post<CartResponse>(
+    cartId = await this.ensureCartId(cartId);
+    
+    const res = await this.post<WooCommerceCartResponse>(
       `/wp-json/wc/store/v1/cart/select-shipping-rate`,
       {
         shipping_rate_id: shippingRateId,
       }
     );
-    return transformIntoCart(res.cart)
+    return transformIntoCart(res);
   }
+}
+
+function transformFromAddress(address: Partial<any>) {
+  if (!address) return address;
+  return {
+    phone: address.phone,
+    address_1: address.address_1 || address.address1,
+    address_2: address.address_2 || address.address2,
+    city: address.city,
+    first_name: address.firstName,
+    last_name: address.lastName,
+    postal_code: address.zip || address.postcode,
+    country_code: address.countryCode?.toLowerCase?.() || address.country?.toLowerCase?.(),
+    state: address.state
+  };
 }
 
 export const cartService = CartService.getInstance();

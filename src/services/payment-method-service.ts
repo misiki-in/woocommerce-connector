@@ -1,21 +1,37 @@
-import { PAGE_SIZE, paymentMethodFromId } from '../config'
-import type { PaymentMethod, PaginatedResponse } from './../types'
 import { BaseService } from './base-service'
 
 /**
- * PaymentMethodService provides functionality for working with specific resources
- * in the Litekart API.
- *
- * This service helps with:
- * - Main functionality point 1
- * - Main functionality point 2
- * - Main functionality point 3
+ * PaymentMethodService provides functionality for working with payment methods
+ * in WooCommerce.
+ * 
+ * WooCommerce uses payment gateways configured in the WordPress admin.
+ * This service retrieves available payment gateways through the WC REST API.
  */
 
-export function transformIntoPaymentMethod(met: Record<string, string>): PaymentMethod {
+type WooCommercePaymentGateway = {
+  id: string
+  title: string
+  description: string
+  enabled: boolean
+  method_title: string
+  method_description: string
+  settings?: Record<string, any>
+}
+
+export type PaymentMethod = {
+  id: string
+  name: string
+  description: string
+  enabled: boolean
+  icon?: string
+}
+
+function transformToPaymentMethod(gateway: WooCommercePaymentGateway): PaymentMethod {
   return {
-    ...met,
-    ...paymentMethodFromId[met.id],
+    id: gateway.id,
+    name: gateway.title,
+    description: gateway.description,
+    enabled: gateway.enabled,
   }
 }
 
@@ -25,42 +41,75 @@ export class PaymentMethodService extends BaseService {
   /**
    * Get the singleton instance
    */
-  /**
- * Get the singleton instance
- * 
- * @returns {PaymentMethodService} The singleton instance of PaymentMethodService
- */
   static getInstance(): PaymentMethodService {
     if (!PaymentMethodService.instance) {
       PaymentMethodService.instance = new PaymentMethodService()
     }
     return PaymentMethodService.instance
   }
+
   /**
- * Fetches PaymentMethod from the API
- * 
- * @param {Object} options - The request options
- * @param {number} [options.page=1] - The page number for pagination
- * @param {string} [options.q=''] - Search query string
- * @param {string} [options.sort='-createdAt'] - Sort order
- * @returns {Promise<any>} The requested data
- * @api {get} /api/paymentmethod Get paymentmethod
- * 
- * @example
- * // Example usage
- * const result = await paymentmethodService.list({ page: 1 });
- */
-  async list({ page = 1, q = '', sort = '-createdAt' }) {
-    const res = await this.get<any>(`/store/payment-providers?region_id=` + BaseService.getRegionId())
-    return {
-      count: res.count,
-      data: res.payment_providers.map(transformIntoPaymentMethod),
-      pageSize: PAGE_SIZE,
-      page,
+   * Fetches payment methods (gateways) from WooCommerce
+   * Uses WooCommerce REST API /wp-json/wc/v3/payment_gateways
+   * 
+   * @param {Object} options - The request options
+   * @param {number} [options.page=1] - The page number for pagination
+   * @param {string} [options.q=''] - Search query string (filters by title)
+   * @returns {Promise<{data: PaymentMethod[], count: number}>} The payment methods
+   * @api {get} /wp-json/wc/v3/payment_gateways Get payment gateways
+   * 
+   * @example
+   * // Example usage
+   * const methods = await paymentMethodService.list({ page: 1 });
+   */
+  async list({ page = 1, q = '' }: { page?: number; q?: string } = {}) {
+    // Get all payment gateways from WooCommerce
+    const gateways = await this.get<WooCommercePaymentGateway[]>('/wp-json/wc/v3/payment_gateways')
+    
+    // Filter by search query if provided
+    let filteredGateways = gateways
+    if (q) {
+      filteredGateways = gateways.filter(g => 
+        g.title.toLowerCase().includes(q.toLowerCase()) ||
+        g.description.toLowerCase().includes(q.toLowerCase())
+      )
     }
+
+    return {
+      data: filteredGateways.map(transformToPaymentMethod),
+      count: filteredGateways.length,
+      page,
+      pageSize: filteredGateways.length,
+    }
+  }
+
+  /**
+   * Get a specific payment method by ID
+   * 
+   * @param {string} id - The payment gateway ID
+   * @returns {Promise<PaymentMethod | null>} The payment method or null if not found
+   */
+  async getById(id: string): Promise<PaymentMethod | null> {
+    try {
+      const gateway = await this.get<WooCommercePaymentGateway>(`/wp-json/wc/v3/payment_gateways/${id}`)
+      return transformToPaymentMethod(gateway)
+    } catch (error) {
+      return null
+    }
+  }
+
+  /**
+   * Get all enabled payment methods
+   * 
+   * @returns {Promise<PaymentMethod[]>} List of enabled payment methods
+   */
+  async getEnabled(): Promise<PaymentMethod[]> {
+    const gateways = await this.get<WooCommercePaymentGateway[]>('/wp-json/wc/v3/payment_gateways')
+    return gateways
+      .filter(g => g.enabled)
+      .map(transformToPaymentMethod)
   }
 }
 
 // Use singleton instance
 export const paymentMethodService = PaymentMethodService.getInstance()
-

@@ -1,10 +1,11 @@
 import type { Category, Product, PaginatedResponse } from '../types'
 import { BaseService } from './base-service'
 import { transformProduct } from './product-service'
+import { PAGE_SIZE } from '../config'
 
-interface CategoryResponse {
-  product_categories: Category[]
-}
+// WooCommerce API returns categories directly as an array, not wrapped in an object
+type CategoryListResponse = Category[]
+type CategoryResponse = Category
 
 type CategoryExtended = {
   children: CategoryExtended[] | null
@@ -58,19 +59,19 @@ export class CategoryService extends BaseService {
 		sort?: string
 		limit?: number
 	}) {
-		const res = await this.get<CategoryResponse>(`/wp-json/wc/v3/products/categories?page=${page}&per_page=${limit}&search=${q}&orderby=${sort}`)
+		const res = await this.get<CategoryListResponse>(`/wp-json/wc/v3/products/categories?page=${page}&per_page=${limit}&search=${q}&orderby=${sort}`)
     return {
       page,
-      data: res.product_categories?.map(transformCategory)
+      data: res.map(transformCategory)
     }
 	}
 
 	// For storefront (public access)
 	async fetchFeaturedCategories({ limit = 100 }: { limit?: number }) {
-		const res = await this.get<CategoryResponse>(`/wp-json/wc/v3/products/categories?per_page=${limit}&hide_empty=false`)
+		const res = await this.get<CategoryListResponse>(`/wp-json/wc/v3/products/categories?per_page=${limit}&hide_empty=false`)
     console.log("Featured categories", res)
     return {
-      data: res.product_categories?.map(transformCategory)
+      data: res.map(transformCategory)
     }
 	}
 
@@ -82,24 +83,24 @@ export class CategoryService extends BaseService {
 
 	// For storefront (public access)
 	async fetchAllCategories({ limit = 100 }: { limit?: number }) {
-		const res = await this.get<CategoryResponse>(`/wp-json/wc/v3/products/categories?per_page=${limit}&hide_empty=false`)
+		const res = await this.get<CategoryListResponse>(`/wp-json/wc/v3/products/categories?per_page=${limit}&hide_empty=false`)
     return {
-      data: res.product_categories?.map(transformCategory)
+      data: res.map(transformCategory)
     }
 	}
 
 	// For storefront (public access)
 	async fetchAllProductsOfCategory(id: string) {
-    const res = await this.get<{ products: Product[] }>(`/wp-json/wc/v3/products?category=${id}`)
+    const res = await this.get<Product[]>(`/wp-json/wc/v3/products?category=${id}`)
     return {
-      data: res.products?.map(transformProduct)
+      data: res.map(transformProduct)
     }
 	}
 
 	// For storefront (public access)
 	async getMegamenu() {
-		const res = await this.get<CategoryResponse>('/wp-json/wc/v3/products/categories?parent=0&hide_empty=false')
-    return res.product_categories?.map(transformCategory)
+		const res = await this.get<CategoryListResponse>('/wp-json/wc/v3/products/categories?parent=0&hide_empty=false')
+    return res.map(transformCategory)
 	}
 }
 

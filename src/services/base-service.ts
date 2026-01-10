@@ -1,4 +1,12 @@
 export const PUBLIC_WOOCOMMERCE_API_PREFIX = "/wp-json/wc/v3"
+export const PUBLIC_WOOCOMMERCE_STORE_API_PREFIX = "/wp-json/wc/store/v1"
+
+export interface WooCommercePaginationHeaders {
+  total: number
+  totalPages: number
+  currentPage: number
+  perPage: number
+}
 
 /**
  * BaseService provides core HTTP functionality for all service classes
@@ -9,12 +17,14 @@ export const PUBLIC_WOOCOMMERCE_API_PREFIX = "/wp-json/wc/v3"
  * - Handling response parsing and type conversion
  * - Providing a configurable fetch implementation
  * - Managing WooCommerce API authentication
+ * - Pagination support for list endpoints
  */
 export class BaseService {
   private static PUBLIC_WOOCOMMERCE_CONSUMER_KEY: string
   private static PUBLIC_WOOCOMMERCE_CONSUMER_SECRET: string
   private static WOOCOMMERCE_SITE_URL: string
   private _fetch: typeof fetch
+  private _lastResponse: Response | null = null
 
   /**
    * Creates a new BaseService instance
@@ -30,6 +40,27 @@ export class BaseService {
     this.WOOCOMMERCE_SITE_URL = siteUrl
     this.PUBLIC_WOOCOMMERCE_CONSUMER_KEY = consumerKey
     this.PUBLIC_WOOCOMMERCE_CONSUMER_SECRET = consumerSecret
+  }
+
+  /**
+   * Get the site URL
+   */
+  static getSiteUrl(): string {
+    return this.WOOCOMMERCE_SITE_URL
+  }
+
+  /**
+   * Get the consumer key
+   */
+  static getConsumerKey(): string {
+    return this.PUBLIC_WOOCOMMERCE_CONSUMER_KEY
+  }
+
+  /**
+   * Get the consumer secret
+   */
+  static getConsumerSecret(): string {
+    return this.PUBLIC_WOOCOMMERCE_CONSUMER_SECRET
   }
 
   /**
@@ -52,27 +83,76 @@ export class BaseService {
     return this._fetch
   }
 
-  private async safeFetch(url: string, data?: any) {
+  /**
+   * Get the last response (useful for accessing headers)
+   */
+  getLastResponse(): Response | null {
+    return this._lastResponse
+  }
+
+  /**
+   * Extract pagination headers from WooCommerce response
+   */
+  protected getPaginationHeaders(): WooCommercePaginationHeaders {
+    const response = this._lastResponse
+    if (!response) {
+      return { total: 0, totalPages: 0, currentPage: 1, perPage: 20 }
+    }
+
+    return {
+      total: parseInt(response.headers.get("X-WP-Total") || "0", 10),
+      totalPages: parseInt(response.headers.get("X-WP-TotalPages") || "0", 10),
+      currentPage: parseInt(new URLSearchParams(response.url?.split("?")[1] || "").get("page") || "1", 10),
+      perPage: parseInt(new URLSearchParams(response.url?.split("?")[1] || "").get("per_page") || "20", 10)
+    }
+  }
+
+  private async safeFetch(url: string, data?: any): Promise<Response> {
     try {
-      const fullUrl = `${this.WOOCOMMERCE_SITE_URL}${PUBLIC_WOOCOMMERCE_API_PREFIX}${url}`
-      return await this._fetch(fullUrl, data)
-    } catch (e: any) {
-      if (navigator.onLine) {
-        throw { message: 'Please check your internet connection and try again' }
+      // Handle both full URLs and relative paths
+      let fullUrl: string
+      if (url.startsWith('http')) {
+        fullUrl = url
+      } else if (url.startsWith('/')) {
+        fullUrl = `${BaseService.WOOCOMMERCE_SITE_URL}${url}`
+      } else {
+        fullUrl = `${BaseService.WOOCOMMERCE_SITE_URL}${PUBLIC_WOOCOMMERCE_API_PREFIX}${url}`
       }
-      throw { message: 'Unable to reach the server. Please try again in a moment' }
+
+      const response = await this._fetch(fullUrl, data)
+      this._lastResponse = response
+      return response
+    } catch (e: any) {
+      // Check if navigator is available (browser environment)
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        throw { message: 'Please check your internet connection and try again', offline: true }
+      }
+      throw { message: 'Unable to reach the server. Please try again in a moment', networkError: true }
     }
   }
 
   private async handleError(response: Response) {
-    if (!response.headers.get("Content-Type")?.startsWith("application/json"))
-      throw new Error(`HTTP error ${response.status}: ${response.statusText}`)
-
-    const data = await response.json()
-    throw { message: 'Something went wrong. Please try again', ...data }
+    const contentType = response.headers.get("Content-Type")
+    
+    // Try to parse JSON error response
+    if (contentType?.includes("application/json")) {
+      try {
+        const data = await response.json()
+        throw {
+          message: data.message || data.error?.message || `HTTP error ${response.status}: ${response.statusText}`,
+          code: data.code || response.status,
+          data: data.data || null
+        }
+      } catch {
+        throw new Error(`HTTP error ${response.status}: ${response.statusText}`)
+      }
+    }
+    
+    throw new Error(`HTTP error ${response.status}: ${response.statusText}`)
   }
 
-  async callFetch<T>(url: string, body: any) {
+  async callFetch<T>(url: string, body: any): Promise<T> {
+    // Add authentication header
     const authHeader = 'Basic ' + btoa(`${BaseService.PUBLIC_WOOCOMMERCE_CONSUMER_KEY}:${BaseService.PUBLIC_WOOCOMMERCE_CONSUMER_SECRET}`)
     
     const response = await this.safeFetch(url, {
@@ -87,8 +167,14 @@ export class BaseService {
       await this.handleError(response)
     }
 
+    // Handle 204 No Content response
+    if (response.status === 204) {
+      return {} as T
+    }
+
     return (await response.json()) as T
   }
+
   /**
    * Perform a GET request
    *
@@ -172,14 +258,5 @@ export class BaseService {
     return this.callFetch<T>(url, {
       method: 'DELETE',
     })
-    /*  
-        if (!response.ok && response.status !== 204) {
-          await this.handleError(response)
-        }
-    
-        if (response.status === 204) return response as T
-        return (await response.json()) as T
-      */
   }
 }
-

@@ -3,47 +3,66 @@ import { BaseService } from './base-service'
 import { PaginatedResponse } from '../types/api-response'
 import { PAGE_SIZE } from '../config'
 
+type WooCommerceAddress = {
+  id: number
+  first_name: string
+  last_name: string
+  company: string
+  address_1: string
+  address_2: string
+  city: string
+  state: string
+  postcode: string
+  country: string
+  email: string
+  phone: string
+}
+
 export function transformFromAddress(address: Partial<Address>) {
-  if (!address)
-    return address
+  if (!address) return address
   return {
-    phone: address.phone,
-    address_1: address.address_1,
-    address_2: address.address_2,
-    city: address.city,
     first_name: address.firstName,
     last_name: address.lastName,
-    postal_code: address.zip,
-    country_code: address.countryCode?.toLowerCase?.(),
-    metadata: {
-      state: address.state
-    }
+    company: address.company,
+    address_1: address.address_1 || address.address1,
+    address_2: address.address_2 || address.address2,
+    city: address.city,
+    state: address.state,
+    postcode: address.zip,
+    country: address.countryCode?.toUpperCase?.() || address.country,
+    email: address.email,
+    phone: address.phone
   }
-
 }
 
-export function transformIntoAddress(address: any): Address {
-  if (!address)
-    return address
+export function transformIntoAddress(address: WooCommerceAddress): Address {
+  if (!address) return {} as Address
   return {
-    ...address,
+    id: address.id.toString(),
     active: true,
-    state: address?.metadata?.state || null,
-    firstName: address?.first_name || null,
-    lastName: address?.last_name || null,
-    zip: address?.postal_code || null,
-    countryCode: address?.country_code?.toUpperCase?.() || null,
+    firstName: address.first_name,
+    lastName: address.last_name,
+    company: address.company,
+    address1: address.address_1,
+    address2: address.address_2,
+    city: address.city,
+    state: address.state,
+    zip: address.postcode,
+    country: address.country,
+    countryCode: address.country,
+    email: address.email,
+    phone: address.phone
   }
 }
+
 /**
  * AddressService provides functionality for managing user addresses
- * in the e-commerce platform.
+ * in the WooCommerce platform.
  *
- * This service helps with:
- * - Retrieving user addresses with pagination and filtering
- * - Creating new addresses for the current user
- * - Updating existing address information
- * - Deleting addresses that are no longer needed
+ * Note: WooCommerce Store API's customer addresses endpoints require
+ * authentication via WordPress nonces. For full functionality, ensure
+ * your WordPress installation has the WooCommerce Store API enabled
+ * and proper authentication is set up.
  */
 export class AddressService extends BaseService {
   private static instance: AddressService
@@ -63,58 +82,117 @@ export class AddressService extends BaseService {
   /**
    * Fetches a paginated list of addresses with optional filtering
    *
+   * Note: WooCommerce Store API doesn't provide a direct list addresses endpoint.
+   * This method simulates it by fetching the customer and extracting addresses.
+   *
    * @param {object} options - The options for filtering and pagination
    * @param {number} [options.page=1] - The page number to fetch
    * @param {string} [options.q=''] - Search query for filtering addresses
    * @param {string} [options.sort='-createdAt'] - Sort order for the results
    * @param {string} [options.user=''] - Filter addresses by user ID
    * @returns {Promise<PaginatedResponse<Address>>} Paginated list of addresses
-   * @api {get} /api/address List addresses
    *
    * @example
    * // Get the second page of addresses sorted by creation date
    * const addresses = await addressService.list({ page: 2, sort: '-createdAt' });
    */
   async list({ page = 1, q = '', sort = '-createdAt', user = '' }) {
+    // WooCommerce Store API doesn't have a list addresses endpoint
+    // We need to use the WC v3 customers endpoint with authentication
+    
     const searchParams = new URLSearchParams()
-    searchParams.set('offset', ((page - 1) * PAGE_SIZE).toString())
-    searchParams.set('limit', String(PAGE_SIZE))
-    searchParams.set('q', q)
+    searchParams.set('page', page.toString())
+    searchParams.set('per_page', String(PAGE_SIZE))
+    if (q) {
+      searchParams.set('search', q)
+    }
 
-    const res = await this.get<any>(
-      `/store/customers/me/addresses?` + searchParams.toString(),
-    )
+    try {
+      // Get customer addresses using WC v3 customers/me endpoint
+      const customer = await this.get<WooCommerceAddress & { billing: WooCommerceAddress; shipping: WooCommerceAddress }>(
+        `/wp-json/wc/v3/customers/me`
+      )
 
-    return {
-      pageSize: PAGE_SIZE,
-      count: res.count,
-      page,
-      data: res.addresses.map(transformIntoAddress),
+      const addresses: Address[] = []
+      
+      // Add billing address if exists
+      if (customer.billing) {
+        addresses.push(transformIntoAddress({
+          ...customer.billing,
+          id: 1,
+          email: customer.email || customer.billing.email
+        }))
+      }
+      
+      // Add shipping address if exists and different from billing
+      if (customer.shipping && JSON.stringify(customer.shipping) !== JSON.stringify(customer.billing)) {
+        addresses.push(transformIntoAddress({
+          ...customer.shipping,
+          id: 2,
+          email: customer.email || customer.shipping.email
+        }))
+      }
+
+      return {
+        pageSize: PAGE_SIZE,
+        count: addresses.length,
+        page,
+        data: addresses
+      }
+    } catch (error) {
+      console.error('Error fetching addresses:', error)
+      return {
+        pageSize: PAGE_SIZE,
+        count: 0,
+        page,
+        data: []
+      }
     }
   }
 
   /**
    * Fetches a single address by ID
    *
-   * @param {string} id - The ID of the address to fetch
+   * @param {string} id - The ID of the address to fetch (1 for billing, 2 for shipping)
    * @returns {Promise<Address>} The address data
-   * @api {get} /api/address/:id Get address by ID
    *
    * @example
    * // Fetch a specific address
-   * const address = await addressService.fetchAddress('123');
+   * const address = await addressService.fetchAddress('1');
    */
   async fetchAddress(id: string): Promise<Address> {
-    const res = await this.get<Address>(`/store/customers/me/addresses/${id}`)
-    return transformIntoAddress(res)
+    try {
+      const customer = await this.get<WooCommerceAddress & { billing: WooCommerceAddress; shipping: WooCommerceAddress }>(
+        `/wp-json/wc/v3/customers/me`
+      )
+
+      if (id === '1' || id === 'billing') {
+        return transformIntoAddress({
+          ...customer.billing,
+          id: 1,
+          email: customer.email || customer.billing.email
+        })
+      } else if (id === '2' || id === 'shipping') {
+        return transformIntoAddress({
+          ...customer.shipping,
+          id: 2,
+          email: customer.email || customer.shipping.email
+        })
+      }
+
+      throw new Error('Address not found')
+    } catch (error) {
+      console.error('Error fetching address:', error)
+      throw error
+    }
   }
 
   /**
    * Creates a new address for the current user
+   * Note: WooCommerce stores billing and shipping as part of customer data
    *
    * @param {Omit<Address, 'id'>} address - The address data to save
    * @returns {Promise<Address>} The created address with ID
-   * @api {post} /api/address/me Create new address
    *
    * @example
    * // Create a new address
@@ -127,47 +205,110 @@ export class AddressService extends BaseService {
    *   country: 'US'
    * });
    */
-  async saveAddress(address: Address) {
-    if (address.id && address.id != 'new')
-      return this.editAddress(address.id, address)
-    return this.post('/store/customers/me/addresses', transformFromAddress(address)) as Promise<Address>
+  async saveAddress(address: Omit<Address, 'id'>): Promise<Address> {
+    try {
+      const transformedAddress = transformFromAddress(address)
+      
+      // Determine if this is billing or shipping based on address type
+      // For now, we'll update both billing and shipping
+      await this.put(`/wp-json/wc/v3/customers/me`, {
+        billing: transformedAddress,
+        shipping: transformedAddress
+      })
+
+      return {
+        ...address,
+        id: address.isBilling ? '1' : '2'
+      } as Address
+    } catch (error) {
+      console.error('Error saving address:', error)
+      throw error
+    }
   }
 
   /**
    * Updates an existing address
    *
-   * @param {string} id - The ID of the address to update
+   * @param {string} id - The ID of the address to update (1 for billing, 2 for shipping)
    * @param {Partial<Address>} address - The address fields to update
    * @returns {Promise<Address>} The updated address
-   * @api {put} /api/address/me/:id Update address
    *
    * @example
    * // Update an address
-   * const updatedAddress = await addressService.editAddress('123', {
+   * const updatedAddress = await addressService.editAddress('1', {
    *   city: 'New City',
    *   zip: '54321'
    * });
    */
-  async editAddress(id: string, address: Partial<Address>) {
-    return this.post(`/store/customers/me/addresses/${id}`, transformFromAddress(address)) as Promise<Address>
+  async editAddress(id: string, address: Partial<Address>): Promise<Address> {
+    try {
+      const transformedAddress = transformFromAddress(address)
+      
+      const updateData: any = {}
+      
+      if (id === '1' || id === 'billing') {
+        updateData.billing = transformedAddress
+      } else if (id === '2' || id === 'shipping') {
+        updateData.shipping = transformedAddress
+      } else {
+        throw new Error('Invalid address ID')
+      }
+
+      await this.put(`/wp-json/wc/v3/customers/me`, updateData)
+
+      return {
+        ...address,
+        id
+      } as Address
+    } catch (error) {
+      console.error('Error updating address:', error)
+      throw error
+    }
   }
 
   /**
    * Deletes an address
+   * Note: WooCommerce doesn't support deleting addresses directly.
+   * This method clears the address data instead.
    *
-   * @param {string} id - The ID of the address to delete
-   * @returns {Promise<any>} The deletion response
-   * @api {delete} /api/address/:id Delete address
+   * @param {string} id - The ID of the address to delete (1 for billing, 2 for shipping)
+   * @returns {Promise<{ deleted: boolean }>} The deletion result
    *
    * @example
    * // Delete an address
-   * await addressService.deleteAddress('123');
+   * await addressService.deleteAddress('1');
    */
-  async deleteAddress(id: string) {
-    return this.delete(`/store/customers/me/addresses/${id}`)
+  async deleteAddress(id: string): Promise<{ deleted: boolean }> {
+    try {
+      const emptyAddress = {
+        first_name: '',
+        last_name: '',
+        company: '',
+        address_1: '',
+        address_2: '',
+        city: '',
+        state: '',
+        postcode: '',
+        country: '',
+        email: '',
+        phone: ''
+      }
+
+      if (id === '1' || id === 'billing') {
+        await this.put(`/wp-json/wc/v3/customers/me`, { billing: emptyAddress })
+      } else if (id === '2' || id === 'shipping') {
+        await this.put(`/wp-json/wc/v3/customers/me`, { shipping: emptyAddress })
+      } else {
+        throw new Error('Invalid address ID')
+      }
+
+      return { deleted: true }
+    } catch (error) {
+      console.error('Error deleting address:', error)
+      throw error
+    }
   }
 }
 
 // Use singleton instance
 export const addressService = AddressService.getInstance()
-

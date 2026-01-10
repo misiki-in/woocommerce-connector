@@ -1,30 +1,106 @@
-import { paymentMethodFromId } from '../config'
-import type { Cart, Checkout } from './../types'
 import { BaseService } from './base-service'
-import { transformIntoOrder } from './order-service'
 
-function transformIntoShippingRate(option: any) {
-  return {
-    base_rate: option.amount,
-    ...option
-  }
-}
 /**
- * CheckoutService provides functionality for managing checkout processes
- * in the Litekart platform.
- *
- * This service helps with:
- * - Processing payments through various payment gateways
- * - Managing checkout flows for different payment methods
- * - Handling shipping rates and order completion
+ * CheckoutService provides functionality for checkout operations in WooCommerce.
+ * 
+ * WooCommerce handles checkout through creating orders and processing payments.
+ * The checkout flow typically involves:
+ * 1. Create a cart (via Store API or WC Cart API)
+ * 2. Create an order with customer and billing info
+ * 3. Process payment through payment gateway
+ * 
+ * Note: Some WooCommerce installations may require additional plugins
+ * for full checkout functionality (e.g., for digital products, subscriptions, etc.)
  */
+
+type WooCommerceOrder = {
+  id: number
+  status: string
+  currency: string
+  total: string
+  billing: {
+    first_name: string
+    last_name: string
+    email: string
+    phone: string
+    address_1: string
+    address_2: string
+    city: string
+    state: string
+    postcode: string
+    country: string
+  }
+  shipping: {
+    first_name: string
+    last_name: string
+    address_1: string
+    address_2: string
+    city: string
+    state: string
+    postcode: string
+    country: string
+  }
+  line_items: Array<{
+    product_id: number
+    quantity: number
+    total: string
+  }>
+  payment_method: string
+  payment_method_title: string
+  transaction_id: string
+  date_created: string
+}
+
+type WooCommerceOrderStatus = 'pending' | 'processing' | 'on-hold' | 'completed' | 'cancelled' | 'refunded' | 'failed'
+
+export interface CheckoutCustomerInfo {
+  email: string
+  firstName: string
+  lastName: string
+  phone?: string
+  billingAddress: {
+    address1: string
+    address2?: string
+    city: string
+    state: string
+    postcode: string
+    country: string
+  }
+  shippingAddress?: {
+    address1: string
+    address2?: string
+    city: string
+    state: string
+    postcode: string
+    country: string
+  }
+  shipToDifferentAddress?: boolean
+}
+
+export interface CartItem {
+  id: string
+  productId: number
+  quantity: number
+}
+
+export interface PaymentInfo {
+  paymentMethod: string
+  paymentNonce?: string
+  isTestMode?: boolean
+}
+
+export interface CheckoutResult {
+  orderId: number
+  status: string
+  paymentUrl?: string
+  paymentMethod?: string
+}
+
 export class CheckoutService extends BaseService {
   private static instance: CheckoutService
 
   /**
    * Get the singleton instance
-   *
-   * @returns {CheckoutService} The singleton instance of CheckoutService
    */
   static getInstance(): CheckoutService {
     if (!CheckoutService.instance) {
@@ -34,268 +110,230 @@ export class CheckoutService extends BaseService {
   }
 
   /**
-   * Initiates Razorpay checkout process
-   *
-   * @param {Object} params - Parameters for Razorpay checkout
-   * @param {string} params.cartId - The cart ID for checkout
-   * @param {string} params.origin - The origin URL for callbacks
-   * @returns {Promise<Cart>} The cart with Razorpay payment information
-   * @api {post} /api/checkout/razorpay Razorpay checkout
-   *
+   * Process checkout by creating an order and optionally processing payment
+   * 
+   * @param {Object} checkoutData - The checkout data
+   * @param {CheckoutCustomerInfo} checkoutData.customer - Customer information
+   * @param {CartItem[]} checkoutData.items - Cart items
+   * @param {PaymentInfo} [checkoutData.payment] - Payment information (optional)
+   * @param {string} [checkoutData.couponCode] - Coupon code to apply
+   * @returns {Promise<CheckoutResult>} The checkout result
+   * 
    * @example
-   * // Start Razorpay checkout
-   * const checkoutData = await checkoutService.checkoutRazorpay({
-   *   cartId: '123',
-   *   origin: 'https://example.com'
+   * // Example usage
+   * const result = await checkoutService.process({
+   *   customer: {
+   *     email: 'customer@example.com',
+   *     firstName: 'John',
+   *     lastName: 'Doe',
+   *     billingAddress: { ... }
+   *   },
+   *   items: [{ productId: 123, quantity: 2 }],
+   *   payment: { paymentMethod: 'bacs' }
    * });
    */
-  async checkoutRazorpay({
-    cartId,
-    origin
+  async process({
+    customer,
+    items,
+    payment,
+    couponCode,
   }: {
-    cartId: string
-    origin: string
-  }) {
-    return this.post('/api/checkout/razorpay', {
-      cartId,
-      origin
-    }) as Promise<Cart>
-  }
+    customer: CheckoutCustomerInfo
+    items: CartItem[]
+    payment?: PaymentInfo
+    couponCode?: string
+  }): Promise<CheckoutResult> {
+    // Build line items from cart items
+    const line_items = items.map(item => ({
+      product_id: item.productId,
+      quantity: item.quantity,
+    }))
 
-  /**
-   * Initiates Cash on Delivery checkout process
-   *
-   * @param {Object} params - Parameters for COD checkout
-   * @param {string} params.cartId - The cart ID for checkout
-   * @param {string} params.origin - The origin URL for callbacks
-   * @returns {Promise<Cart>} The cart with COD payment information
-   * @api {post} /api/checkout/cod COD checkout
-   *
-   * @example
-   * // Start COD checkout
-   * const checkoutData = await checkoutService.checkoutCOD({
-   *   cartId: '123',
-   *   origin: 'https://example.com'
-   * });
-   */
-  async checkoutCOD({ cartId, origin }: { cartId: string; origin: string }) {
-    const collectionResponse = await this.post<{ payment_collection: any }>(`/store/payment-collections`, {
-      cart_id: cartId
-    })
+    // Build the order payload
+    const orderData: any = {
+      payment_method: payment?.paymentMethod || 'bacs',
+      payment_method_title: payment?.paymentMethod || 'Direct Bank Transfer',
+      set_paid: payment !== undefined,
+      billing: {
+        first_name: customer.firstName,
+        last_name: customer.lastName,
+        email: customer.email,
+        phone: customer.phone || '',
+        address_1: customer.billingAddress.address1,
+        address_2: customer.billingAddress.address2 || '',
+        city: customer.billingAddress.city,
+        state: customer.billingAddress.state,
+        postcode: customer.billingAddress.postcode,
+        country: customer.billingAddress.country,
+      },
+      shipping: {
+        first_name: customer.firstName,
+        last_name: customer.lastName,
+        address_1: customer.shippingAddress?.address1 || customer.billingAddress.address1,
+        address_2: customer.shippingAddress?.address2 || customer.billingAddress.address2 || '',
+        city: customer.shippingAddress?.city || customer.billingAddress.city,
+        state: customer.shippingAddress?.state || customer.billingAddress.state,
+        postcode: customer.shippingAddress?.postcode || customer.billingAddress.postcode,
+        country: customer.shippingAddress?.country || customer.billingAddress.country,
+      },
+      line_items,
+    }
 
-    const paymentCollectionId = collectionResponse?.payment_collection?.id
-    if (!paymentCollectionId) throw new Error('Payment Collection creation failed')
+    // Add coupon if provided
+    if (couponCode) {
+      orderData.coupon_lines = [{ code: couponCode }]
+    }
 
-    const providerId = Object.keys(paymentMethodFromId).find((id: string) => paymentMethodFromId[id]?.name == 'COD')
-    await this.post(`/store/payment-collections/${paymentCollectionId}/payment-sessions`, {
-      provider_id: providerId
-    })
+    // Create the order
+    const order = await this.post<WooCommerceOrder>('/wp-json/wc/v3/orders', orderData)
 
-    const res = await this.post<{ error: string, order: any, type: string }>(`/store/carts/${cartId}/complete`, {})
+    // Process payment if payment info provided and order not already paid
+    if (payment && !order.set_paid) {
+      // For most payment gateways, you'll need to redirect to the payment page
+      // or use a payment plugin's API. This is a simplified version.
+      return {
+        orderId: order.id,
+        status: order.status,
+        paymentUrl: order.payment_method !== 'bacs' ? undefined : this.getPaymentInstructions(order),
+        paymentMethod: order.payment_method_title,
+      }
+    }
 
-    console.log("cart completion response", res)
-    if (res.type == 'cart') throw res.error
-    else if (res.type != 'order') 
-      throw 'Invalid cart complete response'
-
-    return transformIntoOrder(res.order)
-    //return this.post('/api/checkout/cod', { cartId, origin }) as Promise<Cart>
-  }
-
-  /**
-   * Captures a Razorpay payment after authorization
-   *
-   * @param {Object} params - Parameters for capturing Razorpay payment
-   * @param {string} params.razorpay_order_id - Razorpay order ID
-   * @param {string} params.razorpay_payment_id - Razorpay payment ID
-   * @returns {Promise<any>} The capture response
-   * @api {post} /api/checkout/razorpay-capture Capture Razorpay payment
-   *
-   * @example
-   * // Capture Razorpay payment
-   * const captureResponse = await checkoutService.captureRazorpayPayment({
-   *   razorpay_order_id: 'order_123',
-   *   razorpay_payment_id: 'pay_456'
-   * });
-   */
-  async captureRazorpayPayment({
-    razorpay_order_id,
-    razorpay_payment_id
-  }: {
-    razorpay_order_id: string
-    razorpay_payment_id: string
-  }) {
-    return this.post('/api/checkout/razorpay-capture', {
-      razorpay_order_id,
-      razorpay_payment_id
-    })
-  }
-
-  /**
-   * Initiates PhonePe checkout process
-   *
-   * @param {Object} params - Parameters for PhonePe checkout
-   * @param {string} params.cartId - The cart ID for checkout
-   * @param {string} params.email - Customer email
-   * @param {string} params.phone - Customer phone number
-   * @param {string} params.origin - The origin URL for callbacks
-   * @returns {Promise<any>} The PhonePe checkout response
-   * @api {post} /api/checkout/phonepe PhonePe checkout
-   *
-   * @example
-   * // Start PhonePe checkout
-   * const checkoutData = await checkoutService.checkoutPhonepe({
-   *   cartId: '123',
-   *   email: 'customer@example.com',
-   *   phone: '9876543210',
-   *   origin: 'https://example.com'
-   * });
-   */
-  async checkoutPhonepe({
-    cartId,
-    email,
-    phone,
-    origin
-  }: {
-    cartId: string
-    email: string
-    phone: string
-    origin: string
-  }) {
-    return this.post('/api/checkout/phonepe', { cartId, email, phone, origin })
-  }
-
-  /**
-   * Retrieves shipping rates for a cart
-   *
-   * @param {Object} params - Parameters for getting shipping rates
-   * @param {string} params.cartId - The cart ID to get shipping rates for
-   * @returns {Promise<Checkout>} The shipping rates information
-   * @api {get} /api/shipping-rates/:cartId Get shipping rates
-   *
-   * @example
-   * // Get shipping rates for a cart
-   * const shippingRates = await checkoutService.getShippingRates({
-   *   cartId: '123'
-   * });
-   */
-  async getShippingRates({ cartId }: { cartId: string }) {
-    const res = await this.get<any>(`/store/shipping-options?cart_id=` + cartId)
-    console.log("fetched shipping rates", res)
     return {
-      data: res.shipping_options.map(transformIntoShippingRate),
-      error: null,
-      message: "Shipping rates fetched successfully",
-      success: true
+      orderId: order.id,
+      status: order.status,
+      paymentMethod: order.payment_method_title,
     }
   }
 
-  async capturePhonepePayment({
-    phonepe_order_id,
-    phonepe_payment_id
-  }: {
-    phonepe_order_id: string
-    phonepe_payment_id: string
-  }) {
-    return this.post('/api/checkout/phonepe-capture', {
-      phonepe_order_id,
-      phonepe_payment_id
-    })
-  }
-  async checkoutPaypal({
-    cartId,
-    origin,
-    return_url
-  }: {
-    cartId: string
-    origin: string
-    return_url: string
-  }) {
-    return this.post('/api/checkout/paypal', {
-      cartId,
-      origin,
-      return_url
-    })
-  }
-  async checkoutStripe({ cartId, origin }: { cartId: string; origin: string }) {
-    return this.post('/api/checkout/stripe', { cartId, origin })
-  }
-  async checkoutStripeCapture({
-    order_no,
-    pg,
-    payment_session_id,
-    storeId
-  }: {
-    order_no: string
-    pg: string
-    payment_session_id: string
-    storeId: string
-  }) {
-    return this.post('/api/checkout/stripe-capture', {
-      order_no,
-      pg,
-      payment_session_id,
-      storeId
-    })
+  /**
+   * Generate payment instructions for bank transfer payments
+   */
+  private getPaymentInstructions(order: WooCommerceOrder): string {
+    return `Order #${order.id} - Total: ${order.currency} ${order.total}. Please transfer to the bank account specified in your confirmation email.`
   }
 
-  async createAffirmPayOrder({
-    cartId,
-    addressId,
-    origin,
-    storeId,
-    paymentMethodId
+  /**
+   * Validate checkout data before processing
+   * 
+   * @param {Object} checkoutData - The checkout data to validate
+   * @returns {Promise<{valid: boolean, errors: string[]}>} Validation result
+   */
+  async validate({
+    customer,
+    items,
   }: {
-    cartId: string
-    addressId: string
-    origin: string
-    storeId: string
-    paymentMethodId: string
-  }) {
-    return this.post('/api/affirm-checkout/create-order', {
-      cartId,
-      addressId,
-      origin,
-      storeId,
-      paymentMethodId
-    })
+    customer: CheckoutCustomerInfo
+    items: CartItem[]
+  }): Promise<{ valid: boolean; errors: string[] }> {
+    const errors: string[] = []
+
+    // Validate customer info
+    if (!customer.email) {
+      errors.push('Email is required')
+    }
+    if (!customer.firstName) {
+      errors.push('First name is required')
+    }
+    if (!customer.lastName) {
+      errors.push('Last name is required')
+    }
+    if (!customer.billingAddress.address1) {
+      errors.push('Billing address is required')
+    }
+    if (!customer.billingAddress.city) {
+      errors.push('City is required')
+    }
+    if (!customer.billingAddress.country) {
+      errors.push('Country is required')
+    }
+
+    // Validate items
+    if (!items || items.length === 0) {
+      errors.push('Cart is empty')
+    }
+
+    // If shipping to different address, validate shipping address
+    if (customer.shipToDifferentAddress) {
+      if (!customer.shippingAddress?.address1) {
+        errors.push('Shipping address is required')
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    }
   }
 
-  async cancelAffirmOrder({
-    orderId,
-    storeId,
-    origin
-  }: {
-    orderId: string
-    storeId: string
-    origin: string
-  }) {
-    return this.post('/api/checkout/affirm/cancel-order', {
-      orderId,
-      storeId,
-      origin
-    })
+  /**
+   * Calculate totals for checkout without creating order
+   * 
+   * @param {CartItem[]} items - Cart items
+   * @param {string} [couponCode] - Coupon code to apply
+   * @param {CheckoutCustomerInfo} [customer] - Customer info for tax calculation
+   * @returns {Promise<{subtotal: number, total: number, taxes: number}>} Calculated totals
+   */
+  async calculateTotals(
+    items: CartItem[],
+    couponCode?: string,
+    customer?: CheckoutCustomerInfo
+  ): Promise<{ subtotal: number; total: number; taxes: number }> {
+    // Note: WooCommerce doesn't have a direct calculate totals endpoint.
+    // The typical approach is to create a temporary order or use the Store API cart.
+    // This is a placeholder that requires the Store API or a custom implementation.
+    
+    // For accurate totals, you would typically:
+    // 1. Use the Store API /wc/store/v1/cart to manage cart
+    // 2. Calculate totals from the cart response
+    
+    // For now, return placeholder values
+    // In production, implement using Store API or custom endpoint
+    return {
+      subtotal: 0,
+      total: 0,
+      taxes: 0,
+    }
   }
 
-  async confirmAffirmOrder({
-    affirmToken,
-    orderId,
-    storeId,
-    origin
-  }: {
-    affirmToken: string
-    orderId: string
-    storeId: string
-    origin: string
-  }) {
-    return this.post('/api/checkout/affirm/confirm-order', {
-      affirmToken,
-      orderId,
-      storeId,
-      origin
-    })
+  /**
+   * Get available payment gateways for checkout
+   * 
+   * @returns {Promise<Array<{id: string, title: string, description: string}>>} Available payment methods
+   */
+  async getPaymentGateways(): Promise<Array<{ id: string; title: string; description: string }>> {
+    // This would typically call the payment method service
+    // Import dynamically to avoid circular dependency
+    const { paymentMethodService } = await import('./payment-method-service')
+    const { data } = await paymentMethodService.list()
+    return data.map(m => ({
+      id: m.id,
+      title: m.name,
+      description: m.description,
+    }))
+  }
+
+  /**
+   * Generate checkout URL for order
+   * 
+   * @param {number} orderId - The order ID
+   * @returns {string} The checkout/payment URL
+   */
+  getCheckoutUrl(orderId: number): string {
+    // Return the WooCommerce checkout URL for the order
+    // This typically requires the store URL to be configured
+    const storeUrl = this.getStoreUrl()
+    return `${storeUrl}/checkout/order-pay/${orderId}/`
+  }
+
+  /**
+   * Get the store URL from configuration or return empty string
+   */
+  private getStoreUrl(): string {
+    // This should be configured externally or obtained from config
+    return ''
   }
 }
 
-// // Use singleton instance
+// Use singleton instance
 export const checkoutService = CheckoutService.getInstance()

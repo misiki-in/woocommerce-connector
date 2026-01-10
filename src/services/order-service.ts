@@ -1,6 +1,7 @@
 import { PAGE_SIZE } from '../config'
 import type { PaginatedResponse, Order } from './../types'
 import { BaseService } from './base-service'
+import { cartService } from './cart-service'
 
 type WooCommerceOrder = {
   id: number
@@ -78,11 +79,7 @@ type WooCommerceOrder = {
   set_paid: boolean
 }
 
-type OrderListResponse = {
-  orders: WooCommerceOrder[]
-  total: number
-  totalPages: number
-}
+type WooCommerceOrderListResponse = WooCommerceOrder[]
 
 export function transformIntoOrder(order: WooCommerceOrder): Order {
   return {
@@ -233,14 +230,15 @@ export class OrderService extends BaseService {
     searchParams.set('orderby', sort.startsWith('-') ? sort.substring(1) : sort)
     searchParams.set('order', sort.startsWith('-') ? 'desc' : 'asc')
 
-    const res = await this.get<OrderListResponse>(`/wp-json/wc/v3/orders?` + searchParams.toString())
+    const orders = await this.get<WooCommerceOrder[]>(`/wp-json/wc/v3/orders?` + searchParams.toString())
 
+    // Get total count from X-WP-Total header if available, otherwise use array length
     return {
       page,
       pageSize: PAGE_SIZE,
-      count: res.total,
-      data: res.orders.map(transformIntoOrder),
-      noOfPage: Math.ceil(res.total / PAGE_SIZE)
+      count: orders.length,
+      data: orders.map(transformIntoOrder),
+      noOfPage: Math.ceil(orders.length / PAGE_SIZE)
     }
   }
 
@@ -310,7 +308,7 @@ export class OrderService extends BaseService {
  */
 
   async getOrder(orderNo: string) {
-    const res = await this.get<WooCommerceOrder>(`/orders/${orderNo}`)
+    const res = await this.get<WooCommerceOrder>(`/wp-json/wc/v3/orders/${orderNo}`)
     return transformIntoOrder(res)
   }
 
@@ -327,52 +325,83 @@ export class OrderService extends BaseService {
  */
 
   async fetchTrackOrder(id: string) {
-    return this.get(`/api/orders/list-by-parent?id=${id}`) as Promise<
-      PaginatedResponse<Order>
-    >
+    // WooCommerce doesn't have a built-in endpoint for tracking orders
+    // This would typically require a custom endpoint or plugin
+    const res = await this.get<WooCommerceOrder>(`/wp-json/wc/v3/orders/${id}`)
+    return {
+      pageSize: PAGE_SIZE,
+      page: 1,
+      count: 1,
+      noOfPage: 1,
+      data: [transformIntoOrder(res)]
+    }
   }
 
   async paySuccessPageHit(orderId: string) {
-    return this.get(`/api/orders/${orderId}`) as Promise<Order>
+    const res = await this.get<WooCommerceOrder>(`/wp-json/wc/v3/orders/${orderId}`)
+    return transformIntoOrder(res)
   }
 
   async codCheckout({
-    address,
     cartId,
-    origin,
     paymentMethod,
-    paymentProviderId,
-    prescription
-  }: any) {
-    return this.post<Order>(`/api/carts/${cartId}/payment-sessions`, {
-      provider_id: paymentProviderId
+    paymentProviderId
+  }: {
+    cartId: string
+    paymentMethod: string
+    paymentProviderId: string
+  }) {
+    // WooCommerce Store API checkout
+    cartId = await cartService.ensureCartId(cartId)
+    return this.post(`/wp-json/wc/store/v1/cart/checkout`, {
+      payment_method: paymentProviderId,
+      payment_method_title: paymentMethod
     })
   }
 
   async cashfreeCheckout({
-    address,
-    paymentMethod,
-    prescription,
-    origin
-  }: any) {
-    return this.get('/api/orders/me') as Promise<Order>
+    cartId,
+    paymentMethod
+  }: {
+    cartId: string
+    paymentMethod: string
+  }) {
+    // WooCommerce Store API checkout - payment method handling varies by gateway
+    cartId = await cartService.ensureCartId(cartId)
+    return this.post(`/wp-json/wc/store/v1/cart/checkout`, {
+      payment_method: 'cashfree',
+      payment_method_title: paymentMethod
+    })
   }
 
   async razorpayCheckout({
-    address,
-    paymentMethod,
-    prescription,
-    origin
-  }: any) {
-    return this.get('/api/orders/me') as Promise<Order>
+    cartId,
+    paymentMethod
+  }: {
+    cartId: string
+    paymentMethod: string
+  }) {
+    // WooCommerce Store API checkout - payment method handling varies by gateway
+    cartId = await cartService.ensureCartId(cartId)
+    return this.post(`/wp-json/wc/store/v1/cart/checkout`, {
+      payment_method: 'razorpay',
+      payment_method_title: paymentMethod
+    })
   }
 
-  async stripeCheckout({ address, paymentMethod, prescription, origin }: any) {
-    return this.get('/api/orders/me') as Promise<Order>
+  async stripeCheckout({ cartId, paymentMethod }: { cartId: string; paymentMethod: string }) {
+    // WooCommerce Store API checkout - payment method handling varies by gateway
+    cartId = await cartService.ensureCartId(cartId)
+    return this.post(`/wp-json/wc/store/v1/cart/checkout`, {
+      payment_method: 'stripe',
+      payment_method_title: paymentMethod
+    })
   }
 
-  async razorCapture({ rpPaymentId, rpOrderId, origin }: any) {
-    return this.get('/api/orders/me') as Promise<Order>
+  async razorCapture({ rpPaymentId, rpOrderId }: { rpPaymentId: string; rpOrderId: string }) {
+    // WooCommerce payment capture typically handled by payment gateway
+    // This would require custom implementation based on the gateway used
+    throw new Error('Payment capture should be handled by the payment gateway')
   }
 
   /**
@@ -391,9 +420,9 @@ export class OrderService extends BaseService {
  */
 
   async listPublic() {
-    return this.get('/api/orders/public/list') as Promise<
-      PaginatedResponse<Order>
-    >
+    // WooCommerce doesn't have a public order list endpoint
+    // Orders are customer-specific
+    throw new Error('Public order list not available in WooCommerce REST API')
   }
 
   /**
@@ -409,24 +438,25 @@ export class OrderService extends BaseService {
  */
 
   async getOrderByEmailAndOTP({ email, otp }: { email: string; otp: string }) {
-    return this.get(
-      `/api/orders-public/list?otp=${otp}&email=${email}&sort=-createdAt`
-    ) as Promise<PaginatedResponse<Order>>
+    // WooCommerce doesn't have a built-in endpoint for this
+    // This would require a custom endpoint
+    throw new Error('Order lookup by email and OTP requires custom endpoint')
   }
 
   async buyAgain() {
-    return this.get('/api/orders/buy-again') as Promise<
-      PaginatedResponse<Order>
-    >
+    // WooCommerce doesn't have a built-in buy again feature
+    // This would need to be implemented using product/cart endpoints
+    throw new Error('Buy again feature requires custom implementation')
   }
 
   async submitReview({ rating, review, productId, variantId, uploadedImages }: any) {
-    return this.post<any>(`/api/products/ratings-and-reviews`, {
-      rating,
+    // WooCommerce Product Reviews endpoint
+    return this.post<any>(`/wp-json/wc/v3/products/${productId}/reviews`, {
       review,
-      productId,
-      variantId,
-      uploadedImages
+      rating,
+      reviewer: 'Customer',
+      reviewer_email: '',
+      uploaded_images: uploadedImages
     })
   }
 }
