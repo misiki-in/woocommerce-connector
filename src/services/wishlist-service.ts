@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { BaseService } from "./base-service"
 
 /**
@@ -17,6 +18,13 @@ export class WishlistService extends BaseService {
    *
    * @returns {WishlistService} The singleton instance of WishlistService
    */
+=======
+import { BaseService } from './base-service.js'
+
+export class WishlistService extends BaseService {
+  private static instance: WishlistService
+
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): WishlistService {
     if (!WishlistService.instance) {
       WishlistService.instance = new WishlistService()
@@ -24,6 +32,7 @@ export class WishlistService extends BaseService {
     return WishlistService.instance
   }
 
+<<<<<<< HEAD
   /**
    * Fetches the user's wishlist with optional search, sorting, and pagination
    *
@@ -116,3 +125,19 @@ export class WishlistService extends BaseService {
 // Use singleton instance
 export const wishlistService = WishlistService.getInstance()
 
+=======
+  async list() {
+    return { data: [], count: 0 }
+  }
+
+  async toggle(productId: string) {
+    // Toggle wishlist item
+  }
+
+  async check(productId: string) {
+    return false
+  }
+}
+
+export const wishlistService = WishlistService.getInstance()
+>>>>>>> f348a1b (feat: product listing)

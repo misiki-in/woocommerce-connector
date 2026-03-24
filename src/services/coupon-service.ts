@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { Coupon, PaginatedResponse } from './../types'
 import { BaseService } from './base-service'
 import { PAGE_SIZE } from '../config'
@@ -73,6 +74,13 @@ export class CouponService extends BaseService {
    *
    * @returns {CouponService} The singleton instance of CouponService
    */
+=======
+import { BaseService } from './base-service.js'
+
+export class CouponService extends BaseService {
+  private static instance: CouponService
+
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): CouponService {
     if (!CouponService.instance) {
       CouponService.instance = new CouponService()
@@ -80,6 +88,7 @@ export class CouponService extends BaseService {
     return CouponService.instance
   }
 
+<<<<<<< HEAD
   /**
    * Fetches coupons from the WooCommerce API
    *
@@ -258,4 +267,16 @@ export class CouponService extends BaseService {
 }
 
 // Use singleton instance
+=======
+  async list() {
+    return this.get<any[]>('/wp-json/wc/v3/coupons')
+  }
+
+  async getByCode(code: string) {
+    const res = await this.get<any[]>('/wp-json/wc/v3/coupons', { code })
+    return res[0] || null
+  }
+}
+
+>>>>>>> f348a1b (feat: product listing)
 export const couponService = CouponService.getInstance()

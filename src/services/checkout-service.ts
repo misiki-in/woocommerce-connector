@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { BaseService } from './base-service'
 
 /**
@@ -95,13 +96,19 @@ export interface CheckoutResult {
   paymentUrl?: string
   paymentMethod?: string
 }
+=======
+import { BaseService } from './base-service.js'
+>>>>>>> f348a1b (feat: product listing)
 
 export class CheckoutService extends BaseService {
   private static instance: CheckoutService
 
+<<<<<<< HEAD
   /**
    * Get the singleton instance
    */
+=======
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): CheckoutService {
     if (!CheckoutService.instance) {
       CheckoutService.instance = new CheckoutService()
@@ -109,6 +116,7 @@ export class CheckoutService extends BaseService {
     return CheckoutService.instance
   }
 
+<<<<<<< HEAD
   /**
    * Process checkout by creating an order and optionally processing payment
    * 
@@ -336,4 +344,15 @@ export class CheckoutService extends BaseService {
 }
 
 // Use singleton instance
+=======
+  async getShippingRates(cartId: string) {
+    return []
+  }
+
+  async checkoutCOD(cartId: string) {
+    // Implement COD logic
+  }
+}
+
+>>>>>>> f348a1b (feat: product listing)
 export const checkoutService = CheckoutService.getInstance()

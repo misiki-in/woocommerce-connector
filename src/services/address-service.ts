@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { Address } from '../types'
 import { BaseService } from './base-service'
 import { PaginatedResponse } from '../types/api-response'
@@ -72,6 +73,14 @@ export class AddressService extends BaseService {
    *
    * @returns {AddressService} The singleton instance of AddressService
    */
+=======
+import { BaseService } from './base-service.js'
+import type { Address } from '../types/index.js'
+
+export class AddressService extends BaseService {
+  private static instance: AddressService
+
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): AddressService {
     if (!AddressService.instance) {
       AddressService.instance = new AddressService()
@@ -79,6 +88,7 @@ export class AddressService extends BaseService {
     return AddressService.instance
   }
 
+<<<<<<< HEAD
   /**
    * Fetches a paginated list of addresses with optional filtering
    *
@@ -311,4 +321,31 @@ export class AddressService extends BaseService {
 }
 
 // Use singleton instance
+=======
+  async list(params: any = {}) {
+    // List addresses for a user
+    return { data: [], count: 0 }
+  }
+
+  async getOne(id: string) {
+    // Get a specific address
+    return null
+  }
+
+  async create(data: Partial<Address>) {
+    // Create address
+    return null
+  }
+
+  async update(id: string, data: Partial<Address>) {
+    // Update address
+    return null
+  }
+
+  async deleteAddress(id: string) {
+    // Delete address
+  }
+}
+
+>>>>>>> f348a1b (feat: product listing)
 export const addressService = AddressService.getInstance()

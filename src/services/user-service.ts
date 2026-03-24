@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { User } from '../types'
 import { BaseService } from './base-service'
 
@@ -67,6 +68,65 @@ function customerToUser(customer: WooCommerceCustomer): UserExtended {
   }
 }
 
+=======
+import type { User } from '../types/index.js'
+import { BaseService } from './base-service.js'
+
+// Browser-compatible cookie functions (no-op in Node.js)
+function deleteMeCookie() {
+  if (typeof document !== 'undefined') {
+    document.cookie = 'me=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/;'
+  }
+}
+
+function saveUserAsMeCookie(user: User) {
+  if (typeof document !== 'undefined') {
+    const me = encodeURIComponent(JSON.stringify(user))
+    document.cookie = 'me=' + me + ';path=/;'
+  }
+}
+
+function getMeFromCookie(): User | null {
+  if (typeof document !== 'undefined') {
+    const name = 'me='
+    const decodedCookie = decodeURIComponent(document.cookie)
+    const ca = decodedCookie.split(';')
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i]
+      while (c.charAt(0) === ' ') {
+        c = c.substring(1)
+      }
+      if (c.indexOf(name) === 0) {
+        try {
+          return JSON.parse(c.substring(name.length, c.length)) as User
+        } catch (e) {
+          return null
+        }
+      }
+    }
+  }
+  return null
+}
+
+function customerToUser(customer: any): User {
+  return {
+    id: customer.id?.toString() || '',
+    email: customer.email || '',
+    firstName: customer.first_name || '',
+    lastName: customer.last_name || '',
+    phone: customer.billing?.phone || customer.shipping?.phone || null,
+    active: true,
+    avatar: customer.avatar_url || null,
+    role: 'USER',
+    createdAt: customer.date_created || '',
+    updatedAt: customer.date_modified || '',
+  }
+}
+
+/**
+ * UserService provides functionality for user account management using the WooCommerce REST API.
+ */
+>>>>>>> f348a1b (feat: product listing)
 export class UserService extends BaseService {
   private static instance: UserService
 
@@ -82,6 +142,7 @@ export class UserService extends BaseService {
     return UserService.instance
   }
 
+<<<<<<< HEAD
   // Get current authenticated user (admin)
   async getMe() {
     return this.get<User>('/admin/users/me')
@@ -93,13 +154,69 @@ export class UserService extends BaseService {
   }
 
   // Customer registration
+=======
+  /**
+   * Retrieves the currently authenticated user's profile from Store API session
+   *
+   * @returns {Promise<User | null>} The current user's profile data
+   */
+  async getMe(): Promise<User | null> {
+    try {
+      const res = await this.get<any>('/wp-json/wc/store/v1/checkout')
+      
+      // If we have a valid customer ID in the session
+      if (res.customer_id && res.customer_id > 0) {
+        const user: User = {
+          id: res.customer_id.toString(),
+          email: res.billing_address?.email || '',
+          firstName: res.billing_address?.first_name || '',
+          lastName: res.billing_address?.last_name || '',
+          phone: res.billing_address?.phone || null,
+          active: true,
+          role: 'USER',
+          createdAt: '',
+          updatedAt: '',
+        }
+        saveUserAsMeCookie(user)
+        return user
+      }
+    } catch (e) {
+      console.warn('Store API session check failed, falling back to cookie', e)
+    }
+    
+    return getMeFromCookie()
+  }
+
+  /**
+   * Retrieves a specific user (customer) by ID using Admin API
+   *
+   * @param {string} id - The ID of the user to fetch
+   * @returns {Promise<User>} The requested user's profile data
+   */
+  async getUser(id: string): Promise<User> {
+    const res = await this.get<any>(`/wp-json/wc/v3/customers/${id}`)
+    return customerToUser(res)
+  }
+
+  /**
+   * Registers a new user account (creates a WooCommerce customer)
+   *
+   * @param {Object} params - The user registration data
+   * @returns {Promise<User>} The created user account
+   */
+>>>>>>> f348a1b (feat: product listing)
   async signup({
     firstName,
     lastName,
     phone,
     email,
     password,
+<<<<<<< HEAD
     cartId = null
+=======
+    cartId = null,
+    origin
+>>>>>>> f348a1b (feat: product listing)
   }: {
     firstName: string
     lastName: string
@@ -107,9 +224,16 @@ export class UserService extends BaseService {
     email: string
     password: string
     cartId?: string | null
+<<<<<<< HEAD
   }) {
     try {
       const createRes = await this.post<WooCommerceCustomer>('/wp-json/wc/v3/customers', {
+=======
+    origin: string
+  }): Promise<User> {
+    try {
+      const res = await this.post<any>('/wp-json/wc/v3/customers', {
+>>>>>>> f348a1b (feat: product listing)
         email,
         first_name: firstName,
         last_name: lastName,
@@ -117,6 +241,7 @@ export class UserService extends BaseService {
         billing: {
           first_name: firstName,
           last_name: lastName,
+<<<<<<< HEAD
           phone,
           email
         },
@@ -127,6 +252,18 @@ export class UserService extends BaseService {
       })
       
       const user = customerToUser(createRes)
+=======
+          email,
+          phone
+        },
+        shipping: {
+          first_name: firstName,
+          last_name: lastName,
+          phone
+        }
+      })
+      const user = customerToUser(res)
+>>>>>>> f348a1b (feat: product listing)
       saveUserAsMeCookie(user)
       return user
     } catch (e: unknown) {
@@ -135,6 +272,7 @@ export class UserService extends BaseService {
     }
   }
 
+<<<<<<< HEAD
   // Login for customer
   async login({ email, password, cartId = null }: { email: string; password: string; cartId?: string | null }) {
     try {
@@ -211,18 +349,66 @@ export class UserService extends BaseService {
   }
 
   // Update user profile (customer)
+=======
+  /**
+   * Placeholder for login (not supported by direct WooCommerce REST API without plugins)
+   */
+  async login({
+    email,
+    password,
+    cartId = null
+  }: {
+    email: string
+    password: string
+    cartId?: string | null
+  }): Promise<{ token: string; user: User }> {
+    // Note: Standard WooCommerce REST API does not support authentication with email/password.
+    // This usually requires a JWT Auth plugin or similar.
+    // We provide a stub that returns the user if found by email, but this is NOT secure.
+    const search = await this.get<any[]>('/wp-json/wc/v3/customers', { email })
+    if (search.length === 0) {
+      throw new Error('User not found')
+    }
+    
+    const user = customerToUser(search[0])
+    saveUserAsMeCookie(user)
+    
+    return {
+      token: 'STUB_TOKEN',
+      user
+    }
+  }
+
+  /**
+   * Logs out the current user by clearing the local cookie
+   */
+  async logout(): Promise<boolean> {
+    deleteMeCookie()
+    return true
+  }
+
+  /**
+   * Updates a user's profile information
+   */
+>>>>>>> f348a1b (feat: product listing)
   async updateProfile({
     id,
     firstName,
     lastName,
     email,
+<<<<<<< HEAD
     phone
+=======
+    phone,
+    avatar
+>>>>>>> f348a1b (feat: product listing)
   }: {
     id: string
     firstName: string
     lastName: string
     email: string
     phone: string
+<<<<<<< HEAD
   }) {
     return this.put<WooCommerceCustomer>(`/wp-json/wc/v3/customers/${id}`, {
       first_name: firstName,
@@ -251,10 +437,45 @@ export class UserService extends BaseService {
   // Delete user (admin)
   async deleteUser(id: string) {
     return this.delete<WooCommerceCustomer>(`/wp-json/wc/v3/customers/${id}`)
+=======
+    avatar?: string
+  }): Promise<User> {
+    const res = await this.put<any>(`/wp-json/wc/v3/customers/${id}`, {
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      billing: { phone },
+      avatar_url: avatar
+    })
+    const user = customerToUser(res)
+    saveUserAsMeCookie(user)
+    return user
+  }
+
+  /**
+   * Check if an email address is already in use
+   */
+  async checkEmail(email: string): Promise<boolean> {
+    try {
+      const res = await this.get<any[]>('/wp-json/wc/v3/customers', { email })
+      return res.length > 0
+    } catch (e) {
+      return false
+    }
+  }
+
+  /**
+   * Delete a user account (Admin only)
+   */
+  async deleteUser(id: string): Promise<boolean> {
+    await this.delete(`/wp-json/wc/v3/customers/${id}`)
+    return true
+>>>>>>> f348a1b (feat: product listing)
   }
 }
 
 export const userService = UserService.getInstance()
+<<<<<<< HEAD
 
 /*
     // Invite admin user
@@ -316,3 +537,5 @@ export const userService = UserService.getInstance()
   }
 
 */
+=======
+>>>>>>> f348a1b (feat: product listing)

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { PAGE_SIZE, pageData } from '../config'
 import { BaseService } from './base-service'
 
@@ -21,12 +22,21 @@ export class PageService extends BaseService {
  * 
  * @returns {PageService} The singleton instance of PageService
  */
+=======
+import { BaseService } from './base-service.js'
+import { pageData } from '../config.js'
+
+export class PageService extends BaseService {
+  private static instance: PageService
+
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): PageService {
     if (!PageService.instance) {
       PageService.instance = new PageService()
     }
     return PageService.instance
   }
+<<<<<<< HEAD
   /**
  * Fetches Page from the API
  * 
@@ -96,3 +106,16 @@ export class PageService extends BaseService {
 // Use singleton instance
 export const pageService = PageService.getInstance()
 
+=======
+
+  async getOne(slug: string) {
+    if (pageData[slug]) {
+      return JSON.parse(pageData[slug])
+    }
+    // Fetch from WordPress Pages API if needed
+    return null
+  }
+}
+
+export const pageService = PageService.getInstance()
+>>>>>>> f348a1b (feat: product listing)

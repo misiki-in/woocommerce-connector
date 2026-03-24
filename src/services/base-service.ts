@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export const PUBLIC_WOOCOMMERCE_API_PREFIX = "/wp-json/wc/v3"
 export const PUBLIC_WOOCOMMERCE_STORE_API_PREFIX = "/wp-json/wc/store/v1"
 
@@ -69,20 +70,42 @@ export class BaseService {
    * @param {typeof fetch} fetchFn - The fetch implementation to use
    * @returns {BaseService} The service instance for chaining
    */
+=======
+import base32 from 'hi-base32';
+
+export let WOOCOMMERCE_STORE_URL: string = ''
+export let WOOCOMMERCE_CONSUMER_KEY: string = ''
+export let WOOCOMMERCE_CONSUMER_SECRET: string = ''
+
+/**
+ * BaseService provides core HTTP functionality for all WooCommerce service classes.
+ */
+export class BaseService {
+  private _fetch: typeof fetch
+
+  constructor(fetchFn?: typeof fetch) {
+    this._fetch = fetchFn || (typeof fetch !== 'undefined' ? fetch : () => Promise.reject(new Error('fetch not available')))
+  }
+
+>>>>>>> f348a1b (feat: product listing)
   setFetch(fetchFn: typeof fetch) {
     this._fetch = fetchFn
     return this
   }
 
+<<<<<<< HEAD
   /**
    * Get the current fetch instance
    *
    * @returns {typeof fetch} The current fetch implementation
    */
+=======
+>>>>>>> f348a1b (feat: product listing)
   getFetch(): typeof fetch {
     return this._fetch
   }
 
+<<<<<<< HEAD
   /**
    * Get the last response (useful for accessing headers)
    */
@@ -204,10 +227,89 @@ export class BaseService {
       headers: {
         'Content-Type': 'application/json',
       },
+=======
+  private async handleError(response: Response) {
+    let message = `HTTP error ${response.status}: ${response.statusText}`
+    try {
+      const data = await response.json()
+      message = data.message || message
+    } catch (e) {
+      // ignore
+    }
+    throw new Error(`WooCommerce API Error: ${message}`)
+  }
+
+  async callFetch<T>(url: string, body: any = {}): Promise<T> {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...body.headers
+    }
+
+    // Add Store API specific headers if needed
+    if (url.includes('/wp-json/wc/store/')) {
+      if (typeof window !== 'undefined') {
+        const nonce = localStorage.getItem('wc_store_nonce')
+        const cartToken = localStorage.getItem('wc_cart_token')
+        if (nonce) headers['Nonce'] = nonce
+        if (cartToken) headers['Cart-Token'] = cartToken
+      }
+    }
+
+    // Add credentials to URL as query params (proxy handles this based on encoded URL)
+    const fullUrl = typeof window != 'undefined'
+      ? `${window.location.origin}/proxy/woocommerce/${base32.encode(url)}`
+      : `/proxy/woocommerce/${base32.encode(url)}`
+
+    try {
+      const response = await this._fetch(fullUrl, {
+        ...body,
+        headers
+      })
+
+      // Extract and save new headers for Store API
+      if (url.includes('/wp-json/wc/store/')) {
+        const newNonce = response.headers.get('Nonce') || response.headers.get('X-WC-Store-API-Nonce')
+        const newCartToken = response.headers.get('Cart-Token')
+        
+        if (typeof window !== 'undefined') {
+          if (newNonce) localStorage.setItem('wc_store_nonce', newNonce)
+          if (newCartToken) localStorage.setItem('wc_cart_token', newCartToken)
+        }
+      }
+
+      if (!response.ok) {
+        await this.handleError(response)
+      }
+
+      const text = await response.text()
+      return text ? JSON.parse(text) as T : {} as T
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out')
+      }
+      throw error
+    }
+  }
+
+  async get<T>(url: string, params: any = {}): Promise<T> {
+    let fullUrl = url
+    if (Object.keys(params).length > 0) {
+      const queryParams = new URLSearchParams(params).toString()
+      const separator = url.includes('?') ? '&' : '?'
+      fullUrl = `${url}${separator}${queryParams}`
+    }
+    return this.callFetch<T>(fullUrl, { method: "GET" })
+  }
+
+  async post<T>(url: string, data: any): Promise<T> {
+    return this.callFetch<T>(url, {
+      method: "POST",
+>>>>>>> f348a1b (feat: product listing)
       body: JSON.stringify(data)
     })
   }
 
+<<<<<<< HEAD
   /**
    * Perform a PUT request
    *
@@ -223,10 +325,16 @@ export class BaseService {
       headers: {
         'Content-Type': 'application/json',
       },
+=======
+  async put<T>(url: string, data: any): Promise<T> {
+    return this.callFetch<T>(url, {
+      method: "PUT",
+>>>>>>> f348a1b (feat: product listing)
       body: JSON.stringify(data)
     })
   }
 
+<<<<<<< HEAD
   /**
    * Perform a PATCH request
    *
@@ -258,5 +366,9 @@ export class BaseService {
     return this.callFetch<T>(url, {
       method: 'DELETE',
     })
+=======
+  async delete<T>(url: string): Promise<T> {
+    return this.callFetch<T>(url, { method: "DELETE" })
+>>>>>>> f348a1b (feat: product listing)
   }
 }

@@ -1,5 +1,9 @@
 import type { Contact } from './../types'
+<<<<<<< HEAD
 import { BaseService } from './base-service'
+=======
+import { BaseService } from './base-service.js'
+>>>>>>> f348a1b (feat: product listing)
 
 /**
  * ContactService provides functionality for managing contact requests
@@ -11,6 +15,7 @@ import { BaseService } from './base-service'
  * - Managing customer communication touchpoints
  */
 export class ContactService extends BaseService {
+<<<<<<< HEAD
   private static instance: ContactService
 
   /**
@@ -54,6 +59,51 @@ export class ContactService extends BaseService {
   }) {
     return {}
   }
+=======
+    private static instance: ContactService
+
+    /**
+     * Get the singleton instance
+     *
+     * @returns {ContactService} The singleton instance of ContactService
+     */
+    static getInstance(): ContactService {
+        if (!ContactService.instance) {
+            ContactService.instance = new ContactService()
+        }
+        return ContactService.instance
+    }
+
+    /**
+     * Submits a contact form to the API
+     *
+     * @param {object} params - The contact form data
+     * @param {string} params.name - The name of the person submitting the form
+     * @param {string} params.email - The email address for correspondence
+     * @param {string} params.message - The content of the contact message
+     * @returns {Promise<Contact>} The created contact request
+     * @api {post} /api/contact-us Submit contact form
+     *
+     * @example
+     * // Submit a contact form
+     * const result = await contactService.submitContactUsForm({
+     *   name: 'John Doe',
+     *   email: 'john@example.com',
+     *   message: 'I have a question about your services'
+     * });
+     */
+    async submitContactUsForm({
+        name,
+        email,
+        message
+    }: {
+        name: string
+        email: string
+        message: string
+    }) {
+        return {}
+    }
+>>>>>>> f348a1b (feat: product listing)
 }
 
 // // Use singleton instance

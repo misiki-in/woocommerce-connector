@@ -11,6 +11,7 @@ import { BaseService } from './base-service'
  * - Main functionality point 3
  */
 export class EnquiryService extends BaseService {
+<<<<<<< HEAD
   private static instance: EnquiryService
 
   /**
@@ -55,6 +56,52 @@ export class EnquiryService extends BaseService {
   }) {
     return {}
   }
+=======
+    private static instance: EnquiryService
+
+    /**
+     * Get the singleton instance
+     */
+    /**
+   * Get the singleton instance
+   * 
+   * @returns {EnquiryService} The singleton instance of EnquiryService
+   */
+    static getInstance(): EnquiryService {
+        if (!EnquiryService.instance) {
+            EnquiryService.instance = new EnquiryService()
+        }
+        return EnquiryService.instance
+    }
+    /**
+   * Creates a new Enquiry
+   * 
+   * @param {any} data - The data to create
+   * @returns {Promise<any>} The created enquiry
+   * @api {post} /api/enquiry Create enquiry
+   * 
+   * @example
+   * // Example usage
+   * const newEnquiry = await enquiryService.create({ 
+   *   // required fields
+   * });
+   */
+    async create({
+        name,
+        email,
+        phone,
+        message,
+        productId
+    }: {
+        name: string
+        email: string
+        phone: string
+        message: string
+        productId: string
+    }) {
+        return {}
+    }
+>>>>>>> f348a1b (feat: product listing)
 }
 
 // // Use singleton instance

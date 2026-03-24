@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { Feedback, PaginatedResponse } from './../types'
 import { BaseService } from './base-service'
 import { PAGE_SIZE } from '../config'
@@ -64,6 +65,13 @@ export class ReviewService extends BaseService {
    *
    * @returns {ReviewService} The singleton instance of ReviewService
    */
+=======
+import { BaseService } from './base-service.js'
+
+export class ReviewService extends BaseService {
+  private static instance: ReviewService
+
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): ReviewService {
     if (!ReviewService.instance) {
       ReviewService.instance = new ReviewService()
@@ -71,6 +79,7 @@ export class ReviewService extends BaseService {
     return ReviewService.instance
   }
 
+<<<<<<< HEAD
   /**
    * Fetches reviews from the WooCommerce API with filtering options
    *
@@ -268,4 +277,15 @@ export class ReviewService extends BaseService {
 }
 
 // Use singleton instance
+=======
+  async list(productId: string) {
+    return this.get<any[]>('/wp-json/wc/v3/products/reviews', { product: productId })
+  }
+
+  async create(data: any) {
+    return this.post<any>('/wp-json/wc/v3/products/reviews', data)
+  }
+}
+
+>>>>>>> f348a1b (feat: product listing)
 export const reviewService = ReviewService.getInstance()

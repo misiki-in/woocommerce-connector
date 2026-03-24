@@ -11,6 +11,17 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
+<<<<<<< HEAD
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
+=======
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
+>>>>>>> f348a1b (feat: product listing)

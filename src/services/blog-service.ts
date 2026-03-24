@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { BaseService } from "./base-service"
 
 /**
@@ -20,6 +21,13 @@ export class BlogService extends BaseService {
  * 
  * @returns {BlogService} The singleton instance of BlogService
  */
+=======
+import { BaseService } from './base-service.js'
+
+export class BlogService extends BaseService {
+  private static instance: BlogService
+
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): BlogService {
     if (!BlogService.instance) {
       BlogService.instance = new BlogService()
@@ -27,6 +35,7 @@ export class BlogService extends BaseService {
     return BlogService.instance
   }
 
+<<<<<<< HEAD
   /**
  * Fetches Blog from the API
  * 
@@ -70,3 +79,16 @@ export class BlogService extends BaseService {
 // // Use singleton instance
 export const blogService = BlogService.getInstance()
 
+=======
+  async list() {
+    return this.get<any[]>('/wp-json/wp/v2/posts')
+  }
+
+  async getOne(slug: string) {
+    const res = await this.get<any[]>('/wp-json/wp/v2/posts', { slug })
+    return res[0] || null
+  }
+}
+
+export const blogService = BlogService.getInstance()
+>>>>>>> f348a1b (feat: product listing)

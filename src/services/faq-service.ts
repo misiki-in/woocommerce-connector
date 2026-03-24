@@ -10,6 +10,7 @@ import { BaseService } from "./base-service"
  * - Main functionality point 3
  */
 export class FaqService extends BaseService {
+<<<<<<< HEAD
   private static instance: FaqService
 
   /**
@@ -43,6 +44,41 @@ export class FaqService extends BaseService {
   async listFaqs({ page = 1, q = '', sort = '-createdAt' }) {
     return []
   }
+=======
+    private static instance: FaqService
+
+    /**
+     * Get the singleton instance
+     */
+    /**
+   * Get the singleton instance
+   * 
+   * @returns {FaqService} The singleton instance of FaqService
+   */
+    static getInstance(): FaqService {
+        if (!FaqService.instance) {
+            FaqService.instance = new FaqService()
+        }
+        return FaqService.instance
+    }
+    /**
+   * Fetches Faq from the API
+   * 
+   * @param {Object} options - The request options
+   * @param {number} [options.page=1] - The page number for pagination
+   * @param {string} [options.q=''] - Search query string
+   * @param {string} [options.sort='-createdAt'] - Sort order
+   * @returns {Promise<any>} The requested data
+   * @api {get} /api/faq Get faq
+   * 
+   * @example
+   * // Example usage
+   * const result = await faqService.listFaqs({ page: 1 });
+   */
+    async listFaqs({ page = 1, q = '', sort = '-createdAt' }) {
+        return []
+    }
+>>>>>>> f348a1b (feat: product listing)
 }
 
 // // Use singleton instance

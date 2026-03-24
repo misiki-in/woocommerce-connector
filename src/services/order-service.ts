@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { PAGE_SIZE } from '../config'
 import type { PaginatedResponse, Order } from './../types'
 import { BaseService } from './base-service'
@@ -200,12 +201,56 @@ export class OrderService extends BaseService {
  * 
  * @returns {OrderService} The singleton instance of OrderService
  */
+=======
+import { BaseService } from './base-service.js'
+import type { Order } from '../types/index.js'
+
+export function transformWooCommerceOrder(wo: any): Order {
+  return {
+    id: wo.id.toString(),
+    orderNo: wo.number,
+    createdAt: wo.date_created,
+    updatedAt: wo.date_modified,
+    status: wo.status,
+    lineItems: wo.line_items.map((item: any) => ({
+      id: item.id.toString(),
+      productId: item.product_id.toString(),
+      variantId: item.variant_id.toString(),
+      qty: item.quantity,
+      price: parseFloat(item.price),
+      total: parseFloat(item.total),
+      title: item.name,
+      sku: item.sku,
+    })),
+    userEmail: wo.billing.email,
+    userPhone: wo.billing.phone,
+    userFirstName: wo.billing.first_name,
+    userLastName: wo.billing.last_name,
+    shippingAddress: wo.shipping,
+    billingAddress: wo.billing,
+    subtotal: parseFloat(wo.discount_total) + parseFloat(wo.total), // Approx
+    total: parseFloat(wo.total),
+    discount: parseFloat(wo.discount_total),
+    shipping: parseFloat(wo.shipping_total),
+    tax: parseFloat(wo.total_tax),
+    paymentMethod: wo.payment_method,
+    paymentStatus: wo.status,
+    currencyCode: wo.currency,
+    paid: wo.date_paid !== null
+  }
+}
+
+export class OrderService extends BaseService {
+  private static instance: OrderService
+
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): OrderService {
     if (!OrderService.instance) {
       OrderService.instance = new OrderService()
     }
     return OrderService.instance
   }
+<<<<<<< HEAD
   /**
  * Fetches Order from the API
  * 
@@ -464,3 +509,29 @@ export class OrderService extends BaseService {
 // Use singleton instance
 export const orderService = OrderService.getInstance()
 
+=======
+
+  async list({ page = 1, perPage = 20 } = {}) {
+    const res = await this.get<any[]>('/wp-json/wc/v3/orders', { page, per_page: perPage })
+    return {
+      data: res.map(transformWooCommerceOrder),
+      count: res.length,
+      page,
+      pageSize: perPage,
+      noOfPage: 1
+    }
+  }
+
+  async getOne(id: string) {
+    const res = await this.get<any>(`/wp-json/wc/v3/orders/${id}`)
+    return transformWooCommerceOrder(res)
+  }
+
+  async create(data: any) {
+    const res = await this.post<any>('/wp-json/wc/v3/orders', data)
+    return transformWooCommerceOrder(res)
+  }
+}
+
+export const orderService = OrderService.getInstance()
+>>>>>>> f348a1b (feat: product listing)

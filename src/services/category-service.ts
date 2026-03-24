@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { Category, Product, PaginatedResponse } from '../types'
 import { BaseService } from './base-service'
 import { transformProduct } from './product-service'
@@ -34,11 +35,46 @@ export function transformCategory(cat: Category): CategoryExtended {
     thumbnail: cat?.image?.src || null,
     link: null,
     isActive: true,
+=======
+import { BaseService } from './base-service.js'
+import type { Category, PaginatedResponse } from '../types/index.js'
+
+export function transformWooCommerceCategory(wc: any): Category {
+  return {
+    id: wc.id.toString(),
+    isActive: true,
+    isInternal: false,
+    isMegamenu: false,
+    thumbnail: wc.image?.src || null,
+    path: wc.slug,
+    level: 0,
+    description: wc.description || null,
+    isFeatured: false,
+    keywords: null,
+    rank: wc.menu_order || 0,
+    link: `/category/${wc.slug}`,
+    metaDescription: null,
+    metaKeywords: null,
+    metaTitle: wc.name,
+    name: wc.name,
+    parentCategoryId: wc.parent ? wc.parent.toString() : null,
+    store: null,
+    slug: wc.slug,
+    userId: '',
+    activeProducts: wc.count || 0,
+    inactiveProducts: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+>>>>>>> f348a1b (feat: product listing)
   }
 }
 
 export class CategoryService extends BaseService {
+<<<<<<< HEAD
   private static instance:CategoryService 
+=======
+  private static instance: CategoryService
+>>>>>>> f348a1b (feat: product listing)
 
   static getInstance(): CategoryService {
     if (!CategoryService.instance) {
@@ -47,6 +83,7 @@ export class CategoryService extends BaseService {
     return CategoryService.instance
   }
 
+<<<<<<< HEAD
 	// For storefront (public access)
 	async fetchFooterCategories({
 		page = 1,
@@ -102,6 +139,34 @@ export class CategoryService extends BaseService {
 		const res = await this.get<CategoryListResponse>('/wp-json/wc/v3/products/categories?parent=0&hide_empty=false')
     return res.map(transformCategory)
 	}
+=======
+  async list(): Promise<PaginatedResponse<Category>> {
+    try {
+      const res = await this.get<any[]>('/wp-json/wc/store/v1/products/categories', { per_page: 100 })
+      return {
+        data: res.map(transformWooCommerceCategory),
+        count: res.length,
+        pageSize: 100,
+        noOfPage: 1,
+        page: 1
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      return { data: [], count: 0, pageSize: 100, noOfPage: 1, page: 1 }
+    }
+  }
+
+  async getMegamenu(): Promise<PaginatedResponse<Category>> {
+    return this.list()
+  }
+
+  async getOne(slug: string) {
+    const list = await this.list()
+    const cat = list.data.find(c => c.slug === slug)
+    if (!cat) throw new Error('Category not found')
+    return cat
+  }
+>>>>>>> f348a1b (feat: product listing)
 }
 
 export const categoryService = CategoryService.getInstance()

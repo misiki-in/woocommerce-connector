@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { orderFromSort } from "../config"
 import { ProductSearchResult } from "../types/product-search"
 import { BaseService } from "./base-service"
@@ -214,4 +215,132 @@ export class SearchService extends BaseService {
 }
 
 // Use singleton instance
+=======
+import { ProductSearchResult } from '../types/product-search.js'
+import { BaseService } from './base-service.js'
+import { transformWooCommerceProduct } from './product-service.js'
+
+/**
+ * SearchService provides product search functionality using the WooCommerce REST API.
+ */
+export class SearchService extends BaseService {
+    private static instance: SearchService
+
+    static getInstance(): SearchService {
+        if (!SearchService.instance) {
+            SearchService.instance = new SearchService()
+        }
+        return SearchService.instance
+    }
+
+    /**
+     * Performs a product search using URL search parameters
+     *
+     * @param {URL} url - The URL containing search parameters
+     * @param {string} [slug] - Optional category slug
+     * @returns {Promise<ProductSearchResult>} Structured search results
+     */
+    async searchWithUrl(url: URL, slug?: string): Promise<ProductSearchResult> {
+        try {
+            const searchParams = new URLSearchParams(url.search)
+
+            const query = searchParams.get('search') || ''
+            const categoriesSlug = slug || searchParams.get('categories') || ''
+            const tagsSlug = searchParams.get('tags') || ''
+            const page = Number(searchParams.get('page') || 1)
+            const sort = searchParams.get('sort') || ''
+            const min_price = searchParams.get('priceFrom') || ''
+            const max_price = searchParams.get('priceTo') || ''
+
+            const params: any = {
+                page,
+                per_page: 20, // default page size
+                status: 'publish'
+            }
+
+            if (query) params.search = query
+            if (min_price) params.min_price = min_price
+            if (max_price) params.max_price = max_price
+
+            // Handle sorting mapping if needed
+            if (sort) {
+                if (sort.includes('price')) {
+                    params.orderby = 'price'
+                    params.order = sort.includes('desc') ? 'desc' : 'asc'
+                } else if (sort.includes('date')) {
+                    params.orderby = 'date'
+                }
+            }
+
+            // Note: WooCommerce API expects category/tag IDs, not slugs.
+            // For a full implementation, we'd need to resolve slugs to IDs first.
+            // As a simplified version for this connector, we'll try to find categories if slug provided.
+            // Store API expects category IDs, not slugs.
+            if (categoriesSlug) {
+                try {
+                    const categoriesRes = await this.get<any[]>('/wp-json/wc/store/v1/products/categories', { per_page: 100 })
+                    const cat = categoriesRes.find((c: any) => c.slug === categoriesSlug)
+                    if (cat) {
+                        params.category = cat.id
+                    }
+                } catch (e) {
+                    console.error('Error resolving category slug:', e)
+                }
+            }
+
+            if (tagsSlug) {
+                // Store API might not support tag slug filtering directly, similar to categories
+                // For simplicity, we'll skip tag filtering or use search if needed
+            }
+
+            const res = await this.get<any[]>('/wp-json/wc/store/v1/products', params)
+
+            return {
+                data: res.map(transformWooCommerceProduct),
+                count: res.length,
+                totalPages: 1, // Need headers for exact count
+                categoryHierarchy: [],
+                facets: {
+                    priceStat: { min: undefined, max: undefined },
+                    categories: [],
+                    tags: [],
+                    allFilters: {}
+                }
+            }
+        } catch (error) {
+            console.error('Search error:', error)
+            return this.emptyResult()
+        }
+    }
+
+    /**
+     * Search with a simple query string
+     */
+    async searchWithQuery(query: string): Promise<ProductSearchResult> {
+        // Construct a dummy URL with the search param
+        const url = new URL('http://localhost')
+        if (query) url.searchParams.set('search', query)
+        return this.searchWithUrl(url)
+    }
+
+    /**
+     * Returns an empty search result
+     */
+    emptyResult(): ProductSearchResult {
+        return {
+            data: [],
+            count: 0,
+            totalPages: 0,
+            categoryHierarchy: [],
+            facets: {
+                priceStat: { min: undefined, max: undefined },
+                categories: [],
+                tags: [],
+                allFilters: {}
+            }
+        }
+    }
+}
+
+>>>>>>> f348a1b (feat: product listing)
 export const searchService = SearchService.getInstance()

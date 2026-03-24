@@ -1,12 +1,28 @@
+<<<<<<< HEAD
 export type Cart = {
 	// Primary fields
 	id: string
+=======
+import type { Address } from './address-types.js'
+
+export type Cart = {
+	// Primary fields
+	id: string
+	checkoutUrl: string | null
+>>>>>>> f348a1b (feat: product listing)
 	email: string | null
 	phone: string | null
 	lineItems: CartLineItem[]
 	// References
 	billingAddressId: string | null
 	shippingAddressId: string | null
+<<<<<<< HEAD
+=======
+
+	billingAddress: Address | null
+	shippingAddress: Address | null
+
+>>>>>>> f348a1b (feat: product listing)
 	regionId: string | null
 	userId: string | null
 	salesChannelId: string | null

@@ -10,16 +10,26 @@ import { BaseService } from "./base-service"
  * - Main functionality point 3
  */
 export class ChatService extends BaseService {
+<<<<<<< HEAD
 	private static instance: ChatService
 
 	/**
 	 * Get the singleton instance
 	 */
 	/**
+=======
+    private static instance: ChatService
+
+    /**
+     * Get the singleton instance
+     */
+    /**
+>>>>>>> f348a1b (feat: product listing)
  * Get the singleton instance
  * 
  * @returns {ChatService} The singleton instance of ChatService
  */
+<<<<<<< HEAD
 	static getInstance(): ChatService {
 		if (!ChatService.instance) {
 			ChatService.instance = new ChatService()
@@ -27,6 +37,15 @@ export class ChatService extends BaseService {
 		return ChatService.instance
 	}
 	/**
+=======
+    static getInstance(): ChatService {
+        if (!ChatService.instance) {
+            ChatService.instance = new ChatService()
+        }
+        return ChatService.instance
+    }
+    /**
+>>>>>>> f348a1b (feat: product listing)
  * Fetches Chat from the API
  * 
  * @param {Object} options - The request options
@@ -40,6 +59,7 @@ export class ChatService extends BaseService {
  * // Example usage
  * const result = await chatService.list({ page: 1 });
  */
+<<<<<<< HEAD
 	async list() {
     return {
       data: [],
@@ -47,6 +67,15 @@ export class ChatService extends BaseService {
       page: 1
     }
 	}
+=======
+    async list() {
+        return {
+            data: [],
+            count: 0,
+            page: 1
+        }
+    }
+>>>>>>> f348a1b (feat: product listing)
 }
 
 // // Use singleton instance

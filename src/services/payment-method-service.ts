@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { BaseService } from './base-service'
 
 /**
@@ -41,6 +42,16 @@ export class PaymentMethodService extends BaseService {
   /**
    * Get the singleton instance
    */
+=======
+import { BaseService } from './base-service.js'
+
+/**
+ * PaymentMethodService provides functionality for managing payment gateways.
+ */
+export class PaymentMethodService extends BaseService {
+  private static instance: PaymentMethodService
+
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): PaymentMethodService {
     if (!PaymentMethodService.instance) {
       PaymentMethodService.instance = new PaymentMethodService()
@@ -49,6 +60,7 @@ export class PaymentMethodService extends BaseService {
   }
 
   /**
+<<<<<<< HEAD
    * Fetches payment methods (gateways) from WooCommerce
    * Uses WooCommerce REST API /wp-json/wc/v3/payment_gateways
    * 
@@ -112,4 +124,25 @@ export class PaymentMethodService extends BaseService {
 }
 
 // Use singleton instance
+=======
+   * List all enabled payment gateways
+   */
+  async list() {
+    try {
+      const res = await this.get<any[]>('/wp-json/wc/v3/payment_gateways')
+      return res.filter((pg: any) => pg.enabled).map((pg: any) => ({
+        id: pg.id,
+        title: pg.title,
+        description: pg.description,
+        method_title: pg.method_title,
+        method_description: pg.method_description,
+      }))
+    } catch (error) {
+      console.error('Error fetching payment methods:', error)
+      return []
+    }
+  }
+}
+
+>>>>>>> f348a1b (feat: product listing)
 export const paymentMethodService = PaymentMethodService.getInstance()

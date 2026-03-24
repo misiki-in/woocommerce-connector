@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { User, verifyEmail } from '../types'
 import { BaseService } from './base-service'
 
@@ -53,6 +54,9 @@ function customerToUser(customer: WooCommerceCustomer): User {
     createdAt: customer.date_created
   }
 }
+=======
+import { BaseService } from './base-service.js'
+>>>>>>> f348a1b (feat: product listing)
 
 export class AuthService extends BaseService {
   private static instance: AuthService
@@ -64,6 +68,7 @@ export class AuthService extends BaseService {
     return AuthService.instance
   }
 
+<<<<<<< HEAD
   /**
    * Get current authenticated customer (using WC v3 customers/me endpoint)
    */
@@ -290,6 +295,30 @@ export class AuthService extends BaseService {
     const endpoint = id === 'me' || id === undefined ? '/wp-json/wc/v3/customers/me' : `/wp-json/wc/v3/customers/${id}`
     const customer = await this.put<WooCommerceCustomer>(endpoint, updateData)
     return customerToUser(customer)
+=======
+  async login(email: string, password: string) {
+    try {
+      // WooCommerce doesn't have a direct REST API for login with password
+      // Usually handled via JWT Auth plugin or similar
+      console.log('Login attempt', email)
+      return { id: 'user_1', email, firstName: 'User', lastName: 'One' }
+    } catch (error) {
+      throw new Error('Login failed')
+    }
+  }
+
+  async logout() {
+    console.log('Logout')
+  }
+
+  async register(data: any) {
+    try {
+      const res = await this.post<any>('/wp-json/wc/v3/customers', data)
+      return res
+    } catch (error) {
+      throw new Error('Registration failed')
+    }
+>>>>>>> f348a1b (feat: product listing)
   }
 }
 

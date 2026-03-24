@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { PAGE_SIZE } from '../config'
 import { ProductStatus, Variant, type Product } from '../types'
 import { BaseService } from './base-service'
@@ -49,6 +50,35 @@ export function transformProduct(product: Product): any {
     weight: parseFloat(product.weight) || null,
     categories: product.categories?.map((cat: any) => cat.id) || [],
     featured: product.featured
+=======
+import { PAGE_SIZE } from '../config.js'
+import { ProductStatus, type Product, type Variant } from '../types/index.js'
+import { BaseService } from './base-service.js'
+
+export function transformWooCommerceProduct(wp: any): Product {
+  const thumbnail = wp.images?.[0]?.src || ''
+  const images = wp.images?.map((img: any) => img.src).join(',') || ''
+
+  return {
+    id: wp.id.toString(),
+    handle: wp.slug,
+    slug: wp.slug,
+    title: wp.name,
+    description: wp.description,
+    status: ProductStatus.PUBLISHED, // Store API only returns published products
+    active: true,
+    thumbnail: thumbnail,
+    images: images,
+    price: parseFloat(wp.prices?.price || '0') / 100,
+    mrp: parseFloat(wp.prices?.regular_price || wp.prices?.price || '0') / 100,
+    options: wp.attributes?.map((attr: any) => ({
+      id: attr.id.toString(),
+      name: attr.name,
+      values: attr.terms?.map((term: any) => term.name) || [],
+    })) || [],
+    variants: [],
+    tags: wp.tags?.map((tag: any) => tag.name) || [],
+>>>>>>> f348a1b (feat: product listing)
   }
 }
 
@@ -61,6 +91,7 @@ export class ProductService extends BaseService {
     }
     return ProductService.instance
   }
+<<<<<<< HEAD
   /**
     * List featured products
   * @param page - Page number (default: 1)
@@ -190,10 +221,49 @@ export class ProductService extends BaseService {
         description: 'Failed to load product data',
         variants: [],
         options: []
+=======
+
+  async list({
+    page = 1,
+    perPage = PAGE_SIZE,
+    search = '',
+    category = '',
+    tag = '',
+    status = 'publish'
+  } = {}) {
+    try {
+      const params: any = {
+        page,
+        per_page: perPage,
+        status: status === 'active' ? 'publish' : status
+      }
+      if (search) params.search = search
+      if (category) params.category = category
+      if (tag) params.tag = tag
+
+      const res = await this.get<any[]>('/wp-json/wc/store/v1/products', params)
+      
+      return {
+        data: res.map(transformWooCommerceProduct),
+        count: res.length,
+        page,
+        pageSize: perPage,
+        noOfPage:  1
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error)
+      return {
+        data: [],
+        count: 0,
+        page,
+        pageSize: perPage,
+        noOfPage: 1
+>>>>>>> f348a1b (feat: product listing)
       }
     }
   }
 
+<<<<<<< HEAD
   /**
    * Add a review for a product
    * Note: WooCommerce doesn't have built-in reviews API in v3, this would need a custom endpoint or plugin
@@ -264,6 +334,31 @@ export class ProductService extends BaseService {
     }
   }
   */
+=======
+  async getOne(slug: string) {
+    const res = await this.get<any[]>('/wp-json/wc/store/v1/products', { slug })
+    if (!res.length) throw new Error('Product not found')
+    return transformWooCommerceProduct(res[0])
+  }
+
+  async getById(id: string) {
+    const res = await this.get<any>(`/wp-json/wc/store/v1/products/${id}`)
+    if (!res) throw new Error('Product not found')
+    return transformWooCommerceProduct(res)
+  }
+
+  async listFeaturedProducts({ page = 1, perPage = PAGE_SIZE } = {}) {
+    return this.list({ page, perPage, status: 'publish' }) // WooCommerce has a featured param too
+  }
+
+  async listTrendingProducts({ page = 1, perPage = PAGE_SIZE } = {}) {
+    return this.list({ page, perPage })
+  }
+
+  async listRelatedProducts({ page = 1, perPage = PAGE_SIZE, category = '' } = {}) {
+    return this.list({ page, perPage, category })
+  }
+>>>>>>> f348a1b (feat: product listing)
 }
 
 export const productService = ProductService.getInstance()

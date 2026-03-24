@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import type { Product } from './product-types'
+=======
+import type { Product } from './product-types.js'
+>>>>>>> f348a1b (feat: product listing)
 
 /**
  * Interface for page metadata information
@@ -65,6 +69,7 @@ export interface ProductSearchResult {
 	}
 }
 
+<<<<<<< HEAD
 export interface ProductSearchResult {
   data: Product[]
   count: number
@@ -78,6 +83,8 @@ export interface ProductSearchResult {
   }
 }
 
+=======
+>>>>>>> f348a1b (feat: product listing)
 /**
  * Complete page data structure for product pages
  */

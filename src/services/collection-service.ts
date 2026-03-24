@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { PAGE_SIZE } from '../config'
 import type { Collection, PaginatedResponse, Product } from '../types'
 import { BaseService } from './base-service'
@@ -25,6 +26,16 @@ export function transformCollection(col: any): CollectionExtended {
   }
 }
 
+=======
+import { BaseService } from './base-service.js'
+import { transformWooCommerceCategory, CategoryService } from './category-service.js'
+import type { Category } from '../types/index.js'
+
+/**
+ * CollectionService provides functionality for managing product collections.
+ * In WooCommerce, this maps to product categories.
+ */
+>>>>>>> f348a1b (feat: product listing)
 export class CollectionService extends BaseService {
   private static instance: CollectionService
 
@@ -35,6 +46,7 @@ export class CollectionService extends BaseService {
     return CollectionService.instance
   }
 
+<<<<<<< HEAD
   async addAssociatedProducts(col: CollectionExtended) {
     col = transformCollection(col)
     col.collectionvalues = await this.getProducts(col?.id)
@@ -86,6 +98,40 @@ export class CollectionService extends BaseService {
       }
     })
     //return ApiService.get(`/store/collections/${collectionId}/products?page=${page}&limit=${limit}`)
+=======
+  /**
+   * List all collections
+   */
+  async list() {
+    try {
+      const res = await this.get<any[]>('/wp-json/wc/v3/products/categories', { per_page: 100 })
+      return {
+        data: res.map(transformWooCommerceCategory),
+        count: res.length
+      }
+    } catch (error) {
+      console.error('Error fetching collections:', error)
+      return { data: [], count: 0 }
+    }
+  }
+
+  /**
+   * Get a single collection by slug
+   */
+  async getOne(slug: string) {
+    const res = await this.get<any[]>('/wp-json/wc/v3/products/categories', { slug })
+    if (!res.length) throw new Error('Collection not found')
+    return transformWooCommerceCategory(res[0])
+  }
+
+  /**
+   * Get a single collection by ID
+   */
+  async getById(id: string) {
+    const res = await this.get<any>(`/wp-json/wc/v3/products/categories/${id}`)
+    if (!res) throw new Error('Collection not found')
+    return transformWooCommerceCategory(res)
+>>>>>>> f348a1b (feat: product listing)
   }
 }
 

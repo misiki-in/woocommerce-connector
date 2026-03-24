@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { Cart, CartLineItem } from "../types";
 import { BaseService } from "./base-service";
 
@@ -122,10 +123,84 @@ function transformIntoCart(cart: WooCommerceCartResponse): Cart {
     needsShipping: cart.needsShipping,
     itemsWeight: cart.itemsWeight,
     errors: cart.errors
+=======
+import type { Cart, CartLineItem, CartProduct } from "../types/index.js"
+import { BaseService } from "./base-service.js"
+
+function transformWooCommerceCartItem(item: any): { lineItem: CartLineItem; cartProduct: CartProduct } {
+  const minorUnit = item.prices.currency_minor_unit || 2
+  const price = parseFloat(item.prices.price) / (10 ** minorUnit)
+  const total = parseFloat(item.totals.line_total) / (10 ** minorUnit)
+
+  const lineItem: CartLineItem = {
+    id: item.key,
+    productId: item.id.toString(),
+    variantId: (item.variation && item.variation.length > 0) ? item.id.toString() : item.id.toString(), // Simplified
+    qty: item.quantity,
+    price: price,
+    total: total
+  }
+
+  const cartProduct: CartProduct = {
+    id: item.key,
+    item_id: item.key,
+    slug: item.slug || '',
+    thumbnail: item.images?.[0]?.src || '',
+    productId: item.id.toString(),
+    variantId: lineItem.variantId,
+    title: item.name,
+    price: price,
+    qty: item.quantity,
+    product: item // Store API cart item already has many product details
+  }
+
+  return { lineItem, cartProduct }
+}
+
+function transformWooCommerceCart(wc: any): Cart {
+  const minorUnit = wc.totals.currency_minor_unit || 2
+  const transformedItems = (wc.items || []).map(transformWooCommerceCartItem)
+  
+  return {
+    id: 'current_cart', // Store API uses session-based cart, no explicit ID usually needed
+    checkoutUrl: wc.checkout_url || null,
+    email: wc.billing_address?.email || null,
+    phone: wc.billing_address?.phone || null,
+    lineItems: transformedItems.map((ti: any) => ti.lineItem),
+    items: transformedItems.map((ti: any) => ti.cartProduct),
+    billingAddressId: null,
+    shippingAddressId: null,
+    billingAddress: wc.billing_address ? { ...wc.billing_address, firstName: wc.billing_address.first_name, lastName: wc.billing_address.last_name } : null,
+    shippingAddress: wc.shipping_address ? { ...wc.shipping_address, firstName: wc.shipping_address.first_name, lastName: wc.shipping_address.last_name } : null,
+    regionId: null,
+    userId: wc.customer_id?.toString() || null,
+    salesChannelId: null,
+    storeId: null,
+    couponCode: wc.coupons?.[0]?.code || null,
+    discountAmount: parseFloat(wc.totals.total_discount) / (10 ** minorUnit),
+    couponAppliedDate: null,
+    paymentId: null,
+    paymentMethod: null,
+    paymentAuthorizedAt: null,
+    needAddress: wc.needs_shipping,
+    isCodAvailable: true,
+    type: 'woocommerce',
+    completedAt: null,
+    idempotencyKey: null,
+    shippingCharges: parseFloat(wc.totals.total_shipping) / (10 ** minorUnit),
+    shippingMethod: null,
+    qty: wc.items_count || transformedItems.reduce((acc: number, ti: any) => acc + ti.lineItem.qty, 0),
+    subtotal: parseFloat(wc.totals.total_items) / (10 ** minorUnit),
+    codCharges: 0,
+    tax: parseFloat(wc.totals.total_tax) / (10 ** minorUnit),
+    total: parseFloat(wc.totals.total_price) / (10 ** minorUnit),
+    savingAmount: parseFloat(wc.totals.total_discount) / (10 ** minorUnit),
+>>>>>>> f348a1b (feat: product listing)
   }
 }
 
 export class CartService extends BaseService {
+<<<<<<< HEAD
   private static instance: CartService;
 
   static getInstance(): CartService {
@@ -211,10 +286,37 @@ export class CartService extends BaseService {
   /**
    * Add item to cart
    */
+=======
+  private static instance: CartService
+
+  static getInstance(): CartService {
+    if (!CartService.instance) {
+      CartService.instance = new CartService()
+    }
+    return CartService.instance
+  }
+
+  async fetchCartData(): Promise<Cart> {
+    const res = await this.get<any>('/wp-json/wc/store/v1/cart')
+    return transformWooCommerceCart(res)
+  }
+
+  async refereshCart(): Promise<Cart> {
+    return this.fetchCartData()
+  }
+
+  async getCartByCartId(cartId: string): Promise<Cart> {
+    // Note: Store API focuses on the current session cart. 
+    // Fetching by specific ID might not be supported directly via Store API.
+    return this.fetchCartData()
+  }
+
+>>>>>>> f348a1b (feat: product listing)
   async addToCart({
     productId,
     variantId,
     qty,
+<<<<<<< HEAD
     cartId,
     lineId,
   }: {
@@ -449,3 +551,75 @@ function transformFromAddress(address: Partial<any>) {
 }
 
 export const cartService = CartService.getInstance();
+=======
+  }: {
+    productId: string
+    variantId: string
+    qty: number
+  }): Promise<Cart> {
+    const body: any = {
+      id: productId,
+      quantity: qty
+    }
+    // If variation info is needed, it should be passed in body.variation
+    const res = await this.post<any>('/wp-json/wc/store/v1/cart/add-item', body)
+    return transformWooCommerceCart(res)
+  }
+
+  async updateCart({
+    qty,
+    lineId,
+  }: {
+    qty: number
+    lineId: string
+  }): Promise<Cart> {
+    const res = await this.post<any>('/wp-json/wc/store/v1/cart/update-item', {
+      key: lineId,
+      quantity: qty
+    })
+    return transformWooCommerceCart(res)
+  }
+
+  async removeCart({
+    lineId
+  }: {
+    lineId: string
+  }): Promise<Cart> {
+    const res = await this.post<any>('/wp-json/wc/store/v1/cart/remove-item', {
+      key: lineId
+    })
+    return transformWooCommerceCart(res)
+  }
+
+  async applyCoupon({
+    couponCode
+  }: {
+    couponCode: string
+  }): Promise<Cart> {
+    const res = await this.post<any>('/wp-json/wc/store/v1/cart/apply-coupon', {
+      code: couponCode
+    })
+    return transformWooCommerceCart(res)
+  }
+
+  async removeCoupon(): Promise<Cart> {
+    // Store API remove-coupon might require the specific code
+    // We'll try to get it from current cart first
+    const cart = await this.fetchCartData()
+    if (cart.couponCode) {
+        const res = await this.post<any>('/wp-json/wc/store/v1/cart/remove-coupon', {
+            code: cart.couponCode
+        })
+        return transformWooCommerceCart(res)
+    }
+    return cart
+  }
+
+  async completeCart(cartId: string): Promise<Cart> {
+    // This usually involves the checkout endpoint
+    return this.fetchCartData()
+  }
+}
+
+export const cartService = CartService.getInstance()
+>>>>>>> f348a1b (feat: product listing)

@@ -1,4 +1,5 @@
 export type User = {
+<<<<<<< HEAD
 	id: string
 	phone?: string | null
 	email: string
@@ -123,4 +124,17 @@ export type Role = {
 	permissions: string[]
 	createdAt: string
 	updatedAt: string
+=======
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  phone: string | null
+  active: boolean
+  avatar?: string | null
+  role?: string | null
+  cartId?: string | null
+  createdAt: string
+  updatedAt: string
+>>>>>>> f348a1b (feat: product listing)
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export type Store = {
 	id: string
 	name: string
@@ -42,6 +43,8 @@ export type Store = {
 	updatedAt: string
 }
 
+=======
+>>>>>>> f348a1b (feat: product listing)
 export type Vendor = {
 	id: string
 	status?: string | null
@@ -78,6 +81,7 @@ export type Vendor = {
 	createdAt: string
 	updatedAt: string
 }
+<<<<<<< HEAD
 
 export type Setting = {
 	id: string // Unique identifier for each setting
@@ -185,3 +189,5 @@ export type Notification = {
 	deletedAt?: string
 	description: string
 }
+=======
+>>>>>>> f348a1b (feat: product listing)

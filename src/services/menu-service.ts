@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { Menu } from './../types'
 import { BaseService } from './base-service'
 
@@ -21,12 +22,20 @@ export class MenuService extends BaseService {
  * 
  * @returns {MenuService} The singleton instance of MenuService
  */
+=======
+import { BaseService } from './base-service.js'
+
+export class MenuService extends BaseService {
+  private static instance: MenuService
+
+>>>>>>> f348a1b (feat: product listing)
   static getInstance(): MenuService {
     if (!MenuService.instance) {
       MenuService.instance = new MenuService()
     }
     return MenuService.instance
   }
+<<<<<<< HEAD
   /**
  * Fetches Menu from the API
  * 
@@ -115,3 +124,16 @@ export class MenuService extends BaseService {
 // Use singleton instance
 export const menuService = MenuService.getInstance()
 
+=======
+
+  async list() {
+    // WordPress doesn't have a standard REST API for menus without a plugin
+    // Usually handled via WP-REST-API V2 Menus or custom logic
+    return {
+      data: [],
+    }
+  }
+}
+
+export const menuService = MenuService.getInstance()
+>>>>>>> f348a1b (feat: product listing)
