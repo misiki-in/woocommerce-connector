@@ -1,10 +1,8 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** StoreService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class StoreService extends BaseService {
-  getStoreByIdOrDomain(idOrDomain?: string) {
-    if (!EP.settings) return this.unsupported('store.getStoreByIdOrDomain')
-    void idOrDomain
-    return this.get(EP.settings)
-  }
+  private static instance: StoreService
+  static getInstance(): StoreService { if (!StoreService.instance) StoreService.instance = new StoreService(); return StoreService.instance }
+  async getStoreByIdOrDomain(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const storeService = StoreService.getInstance()

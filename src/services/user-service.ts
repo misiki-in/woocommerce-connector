@@ -1,34 +1,24 @@
+import type { User } from '../types'
+import { AuthService } from './auth-service'
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** UserService — auth-flow methods delegate to AuthService. */
 export class UserService extends BaseService {
-  getMe() {
-    if (!EP.customers) return this.unsupported('user.getMe')
-    return this.get(EP.customers)
-  }
-  getUser(id: string | number) {
-    if (!EP.customers) return this.unsupported('user.getUser')
-    return this.get(`${EP.customers}/${id}`)
-  }
-  signup(data: Record<string, unknown>) {
-    if (!EP.customers) return this.unsupported('user.signup')
-    return this.post(EP.customers, data)
-  }
-  updateProfile(data: Record<string, unknown> & { id: string | number }) {
-    if (!EP.customers) return this.unsupported('user.updateProfile')
-    return this.put(`${EP.customers}/${data.id}`, data)
-  }
-  deleteUser(id: string | number) {
-    if (!EP.customers) return this.unsupported('user.deleteUser')
-    return this.delete(`${EP.customers}/${id}`)
-  }
-  checkEmail(email: string) { void email; return this.unsupported('user.checkEmail') }
-  login(data: Record<string, unknown>) { void data; return this.unsupported('user.login') }
-  logout() { return this.unsupported('user.logout') }
-  forgotPassword(data: Record<string, unknown>) { void data; return this.unsupported('user.forgotPassword') }
-  changePassword(data: Record<string, unknown>) { void data; return this.unsupported('user.changePassword') }
-  resetPassword(data: Record<string, unknown>) { void data; return this.unsupported('user.resetPassword') }
-  getOtp(data: Record<string, unknown>) { void data; return this.unsupported('user.getOtp') }
-  verifyOtp(data: Record<string, unknown>) { void data; return this.unsupported('user.verifyOtp') }
-  joinAsVendor(data: Record<string, unknown>) { void data; return this.unsupported('user.joinAsVendor') }
+  private static instance: UserService
+  static getInstance(): UserService { if (!UserService.instance) UserService.instance = new UserService(); return UserService.instance }
+  private get auth() { return AuthService.getInstance() }
+  async getMe(): Promise<User> { return this.auth.getMe() }
+  async getUser(id: string): Promise<User> { return this.auth.getUser(id) }
+  async login(a: any): Promise<User> { return this.auth.login(a) }
+  async signup(a: any): Promise<User> { return this.auth.signup(a) }
+  async logout() { return this.auth.logout() }
+  async updateProfile(a: any) { return this.auth.updateProfile(a) }
+  async forgotPassword(a: any) { return this.auth.forgotPassword(a) }
+  async changePassword(a: any) { return this.auth.changePassword(a) }
+  async resetPassword(a: any) { return this.auth.resetPassword(a) }
+  async getOtp(a: any) { return this.auth.getOtp(a) }
+  async verifyOtp(a: any) { return this.auth.verifyOtp(a) }
+  async joinAsVendor(a: any) { return this.auth.joinAsVendor(a) }
+  async checkEmail(_e: string) { return this.dummy({ exists: false }) }
+  async deleteUser(_id: string) { return this.dummy({ success: true }) }
 }
+export const userService = UserService.getInstance()

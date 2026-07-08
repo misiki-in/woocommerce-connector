@@ -1,9 +1,8 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** PaymentMethodService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class PaymentMethodService extends BaseService {
-  list(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.paymentMethods) return this.unsupported('paymentMethod.list')
-    return this.listAt(EP.paymentMethods, opts)
-  }
+  private static instance: PaymentMethodService
+  static getInstance(): PaymentMethodService { if (!PaymentMethodService.instance) PaymentMethodService.instance = new PaymentMethodService(); return PaymentMethodService.instance }
+  async list(..._args: any[]): Promise<any> { return this.emptyPage() }
 }
+export const paymentMethodService = PaymentMethodService.getInstance()

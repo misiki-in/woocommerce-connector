@@ -1,25 +1,15 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** VendorService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class VendorService extends BaseService {
-  list(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.vendors) return this.unsupported('vendor.list')
-    return this.listAt(EP.vendors, opts)
-  }
-  getVendor(id: string | number) {
-    if (!EP.vendors) return this.unsupported('vendor.getVendor')
-    return this.get(`${EP.vendors}/${id}`)
-  }
-  save(data: Record<string, unknown>) {
-    if (!EP.vendors) return this.unsupported('vendor.save')
-    return this.post(EP.vendors, data)
-  }
-  update(data: Record<string, unknown> & { id: string | number }) {
-    if (!EP.vendors) return this.unsupported('vendor.update')
-    return this.put(`${EP.vendors}/${data.id}`, data)
-  }
-  fetchMyVendorDetails() { return this.unsupported('vendor.fetchMyVendorDetails') }
-  fetchDashboard() { return this.unsupported('vendor.fetchDashboard') }
-  fetchProductsOfVendor(vendorId: string | number) { void vendorId; return this.unsupported('vendor.fetchProductsOfVendor') }
-  getAllVendorRatings(vendorId: string | number) { void vendorId; return this.unsupported('vendor.getAllVendorRatings') }
+  private static instance: VendorService
+  static getInstance(): VendorService { if (!VendorService.instance) VendorService.instance = new VendorService(); return VendorService.instance }
+  async save(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async update(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async list(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async getVendor(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async fetchMyVendorDetails(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async fetchDashboard(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async fetchProductsOfVendor(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async getAllVendorRatings(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const vendorService = VendorService.getInstance()

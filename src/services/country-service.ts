@@ -1,9 +1,8 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** CountryService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class CountryService extends BaseService {
-  list(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.countries) return this.unsupported('country.list')
-    return this.listAt(EP.countries, opts)
-  }
+  private static instance: CountryService
+  static getInstance(): CountryService { if (!CountryService.instance) CountryService.instance = new CountryService(); return CountryService.instance }
+  async list(..._args: any[]): Promise<any> { return this.emptyPage() }
 }
+export const countryService = CountryService.getInstance()

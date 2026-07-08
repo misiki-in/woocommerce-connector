@@ -1,18 +1,11 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** WishlistService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class WishlistService extends BaseService {
-  fetchWishlist(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.wishlist) return this.unsupported('wishlist.fetchWishlist')
-    return this.listAt(EP.wishlist, opts)
-  }
-  checkWishlist(id: string | number) {
-    if (!EP.wishlist) return this.unsupported('wishlist.checkWishlist')
-    return this.get(`${EP.wishlist}/${id}`)
-  }
-  checkWishlistInBulk(ids: Array<string | number>) { void ids; return this.unsupported('wishlist.checkWishlistInBulk') }
-  toggleWishlist(data: Record<string, unknown>) {
-    if (!EP.wishlist) return this.unsupported('wishlist.toggleWishlist')
-    return this.post(EP.wishlist, data)
-  }
+  private static instance: WishlistService
+  static getInstance(): WishlistService { if (!WishlistService.instance) WishlistService.instance = new WishlistService(); return WishlistService.instance }
+  async fetchWishlist(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async checkWishlist(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async checkWishlistInBulk(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async toggleWishlist(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const wishlistService = WishlistService.getInstance()

@@ -1,17 +1,10 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** PageService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class PageService extends BaseService {
-  list(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.pages) return this.unsupported('page.list')
-    return this.listAt(EP.pages, opts)
-  }
-  listLatestPages(opts: { page?: number; perPage?: number } = {}) {
-    if (!EP.pages) return this.unsupported('page.listLatestPages')
-    return this.listAt(EP.pages, opts)
-  }
-  getOne(id: string | number) {
-    if (!EP.pages) return this.unsupported('page.getOne')
-    return this.get(`${EP.pages}/${id}`)
-  }
+  private static instance: PageService
+  static getInstance(): PageService { if (!PageService.instance) PageService.instance = new PageService(); return PageService.instance }
+  async list(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async listLatestPages(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async getOne(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const pageService = PageService.getInstance()

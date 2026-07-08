@@ -1,25 +1,12 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** AddressService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class AddressService extends BaseService {
-  list(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.addresses) return this.unsupported('address.list')
-    return this.listAt(EP.addresses, opts)
-  }
-  fetchAddress(id: string | number) {
-    if (!EP.addresses) return this.unsupported('address.fetchAddress')
-    return this.get(`${EP.addresses}/${id}`)
-  }
-  saveAddress(data: Record<string, unknown>) {
-    if (!EP.addresses) return this.unsupported('address.saveAddress')
-    return this.post(EP.addresses, data)
-  }
-  editAddress(id: string | number, data: Record<string, unknown>) {
-    if (!EP.addresses) return this.unsupported('address.editAddress')
-    return this.put(`${EP.addresses}/${id}`, data)
-  }
-  deleteAddress(id: string | number) {
-    if (!EP.addresses) return this.unsupported('address.deleteAddress')
-    return this.delete(`${EP.addresses}/${id}`)
-  }
+  private static instance: AddressService
+  static getInstance(): AddressService { if (!AddressService.instance) AddressService.instance = new AddressService(); return AddressService.instance }
+  async list(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async fetchAddress(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async saveAddress(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async editAddress(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async deleteAddress(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const addressService = AddressService.getInstance()

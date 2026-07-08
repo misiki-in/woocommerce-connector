@@ -1,10 +1,8 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** AutocompleteService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class AutocompleteService extends BaseService {
-  list(query: string | { search?: string } = '') {
-    if (!EP.search) return this.unsupported('autocomplete.list')
-    const q = typeof query === 'string' ? query : (query.search || '')
-    return this.listAt(EP.search, { search: q, perPage: 8 })
-  }
+  private static instance: AutocompleteService
+  static getInstance(): AutocompleteService { if (!AutocompleteService.instance) AutocompleteService.instance = new AutocompleteService(); return AutocompleteService.instance }
+  async list(..._args: any[]): Promise<any> { return this.emptyPage() }
 }
+export const autocompleteService = AutocompleteService.getInstance()

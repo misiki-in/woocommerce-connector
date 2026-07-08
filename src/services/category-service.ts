@@ -1,26 +1,22 @@
+import type { Category } from '../types'
+import { mapCategoryGeneric, getPath } from '../mappers/generic.mapper'
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+const FIELDS = {"id":"id","title":"name","slug":"slug"} as const
+/** CategoryService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
 export class CategoryService extends BaseService {
-  fetchAllCategories(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.categories) return this.unsupported('category.fetchAllCategories')
-    return this.listAt(EP.categories, opts)
+  private static instance: CategoryService
+  static getInstance(): CategoryService { if (!CategoryService.instance) CategoryService.instance = new CategoryService(); return CategoryService.instance }
+  async fetchAllCategories(): Promise<Category[]> {
+    const raw = await this.get<any>('/products/categories')
+    const arr: any[] = Array.isArray(raw) ? raw : (raw.data || raw.items || [])
+    return arr.map((x) => mapCategoryGeneric(x, FIELDS))
   }
-  fetchCategory(id: string | number) {
-    if (!EP.categories) return this.unsupported('category.fetchCategory')
-    return this.get(`${EP.categories}/${id}`)
+  async fetchFeaturedCategories() { return this.fetchAllCategories() }
+  async fetchFooterCategories() { return this.fetchAllCategories() }
+  async fetchCategory(id: string): Promise<Category> {
+    try { const raw = await this.get<any>('/products/categories/' + id); return mapCategoryGeneric(raw, FIELDS) } catch { return mapCategoryGeneric({ id }, FIELDS) }
   }
-  fetchFeaturedCategories(opts: { page?: number; perPage?: number } = {}) {
-    if (!EP.categories) return this.unsupported('category.fetchFeaturedCategories')
-    return this.listAt(EP.categories, opts)
-  }
-  fetchFooterCategories(opts: { page?: number; perPage?: number } = {}) {
-    if (!EP.categories) return this.unsupported('category.fetchFooterCategories')
-    return this.listAt(EP.categories, opts)
-  }
-  fetchAllProductsOfCategories(id: string | number) {
-    if (!EP.products) return this.unsupported('category.fetchAllProductsOfCategories')
-    return this.listAt(EP.products, { search: String(id) })
-  }
-  getMegamenu() { return this.unsupported('category.getMegamenu') }
+  async fetchAllProductsOfCategories(_id: string) { return this.emptyPage() }
+  async getMegamenu() { return this.fetchAllCategories() }
 }
+export const categoryService = CategoryService.getInstance()

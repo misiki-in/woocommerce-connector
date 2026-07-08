@@ -1,46 +1,22 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** OrderService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class OrderService extends BaseService {
-  list(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.orders) return this.unsupported('order.list')
-    return this.listAt(EP.orders, opts)
-  }
-  listOrdersByParent(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.orders) return this.unsupported('order.listOrdersByParent')
-    return this.listAt(EP.orders, opts)
-  }
-  fetchOrder(id: string | number) {
-    if (!EP.orders) return this.unsupported('order.fetchOrder')
-    return this.get(`${EP.orders}/${id}`)
-  }
-  getOrder(orderNo: string | number) {
-    if (!EP.orders) return this.unsupported('order.getOrder')
-    return this.get(`${EP.orders}/${orderNo}`)
-  }
-  fetchTrackOrder(id: string | number) {
-    if (!EP.orders) return this.unsupported('order.fetchTrackOrder')
-    return this.get(`${EP.orders}/${id}`)
-  }
-  create(data: Record<string, unknown>) {
-    if (!EP.orders) return this.unsupported('order.create')
-    return this.post(EP.orders, data)
-  }
-  update(id: string | number, data: Record<string, unknown>) {
-    if (!EP.orders) return this.unsupported('order.update')
-    return this.put(`${EP.orders}/${id}`, data)
-  }
-  listPublic() { return this.unsupported('order.listPublic') }
-  buyAgain() { return this.unsupported('order.buyAgain') }
-  paySuccessPageHit(orderId: string) { void orderId; return this.unsupported('order.paySuccessPageHit') }
-  getOrderByEmailAndOTP(data: Record<string, unknown>) { void data; return this.unsupported('order.getOrderByEmailAndOTP') }
-  submitReview(data: Record<string, unknown>) {
-    if (!EP.reviews) return this.unsupported('order.submitReview')
-    return this.post(EP.reviews, data)
-  }
-  codCheckout(data: Record<string, unknown>) { void data; return this.unsupported('order.codCheckout') }
-  razorpayCheckout(data: Record<string, unknown>) { void data; return this.unsupported('order.razorpayCheckout') }
-  stripeCheckout(data: Record<string, unknown>) { void data; return this.unsupported('order.stripeCheckout') }
-  cashfreeCheckout(data: Record<string, unknown>) { void data; return this.unsupported('order.cashfreeCheckout') }
-  razorCapture(data: Record<string, unknown>) { void data; return this.unsupported('order.razorCapture') }
+  private static instance: OrderService
+  static getInstance(): OrderService { if (!OrderService.instance) OrderService.instance = new OrderService(); return OrderService.instance }
+  async list(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async listOrdersByParent(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async fetchOrder(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async getOrder(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async fetchTrackOrder(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async paySuccessPageHit(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async codCheckout(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async cashfreeCheckout(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async razorpayCheckout(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async stripeCheckout(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async razorCapture(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async listPublic(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async getOrderByEmailAndOTP(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async buyAgain(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async submitReview(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const orderService = OrderService.getInstance()

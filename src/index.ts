@@ -1,4 +1,4 @@
 export * from './config'
-export * from './client'
-export * from './services/index'
 export * from './types/index'
+export * from './services/index'
+export * from './client'

@@ -1,9 +1,8 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** RegionService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class RegionService extends BaseService {
-  getRegionByRegionId(id: string | number) {
-    if (!EP.countries) return this.unsupported('region.getRegionByRegionId')
-    return this.get(`${EP.countries}/${id}`)
-  }
+  private static instance: RegionService
+  static getInstance(): RegionService { if (!RegionService.instance) RegionService.instance = new RegionService(); return RegionService.instance }
+  async getRegionByRegionId(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const regionService = RegionService.getInstance()

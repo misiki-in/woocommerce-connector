@@ -1,9 +1,8 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** CurrencyService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class CurrencyService extends BaseService {
-  listCurrencies(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    if (!EP.currencies) return this.unsupported('currency.listCurrencies')
-    return this.listAt(EP.currencies, opts)
-  }
+  private static instance: CurrencyService
+  static getInstance(): CurrencyService { if (!CurrencyService.instance) CurrencyService.instance = new CurrencyService(); return CurrencyService.instance }
+  async listCurrencies(..._args: any[]): Promise<any> { return this.emptyPage() }
 }
+export const currencyService = CurrencyService.getInstance()

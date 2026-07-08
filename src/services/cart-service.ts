@@ -1,34 +1,18 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** CartService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class CartService extends BaseService {
-  fetchCartData() {
-    if (!EP.cart) return this.unsupported('cart.fetchCartData')
-    return this.get(EP.cart)
-  }
-  refereshCart() {
-    if (!EP.cart) return this.unsupported('cart.refereshCart')
-    return this.get(EP.cart)
-  }
-  getCartByCartId(cartId: string) {
-    if (!EP.cart) return this.unsupported('cart.getCartByCartId')
-    return this.get(`${EP.cart}/${cartId}`)
-  }
-  addToCart(data: Record<string, unknown>) {
-    if (!EP.cart) return this.unsupported('cart.addToCart')
-    return this.post(EP.cart, data)
-  }
-  removeCart(data: Record<string, unknown>) {
-    if (!EP.cart) return this.unsupported('cart.removeCart')
-    return this.post(`${EP.cart}/remove`, data)
-  }
-  applyCoupon(data: Record<string, unknown>) { void data; return this.unsupported('cart.applyCoupon') }
-  removeCoupon() { return this.unsupported('cart.removeCoupon') }
-  updateCart(data: Record<string, unknown>) {
-    if (!EP.cart) return this.unsupported('cart.updateCart')
-    return this.post(`${EP.cart}/update`, data)
-  }
-  updateCart2(data: Record<string, unknown>) { void data; return this.unsupported('cart.updateCart2') }
-  completeCart(cartId: string) { void cartId; return this.unsupported('cart.completeCart') }
-  updateShippingRate(data: Record<string, unknown>) { void data; return this.unsupported('cart.updateShippingRate') }
+  private static instance: CartService
+  static getInstance(): CartService { if (!CartService.instance) CartService.instance = new CartService(); return CartService.instance }
+  async fetchCartData(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async refereshCart(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async getCartByCartId(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async addToCart(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async removeCart(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async applyCoupon(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async removeCoupon(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async updateCart2(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async completeCart(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async updateCart(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async updateShippingRate(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const cartService = CartService.getInstance()

@@ -1,17 +1,10 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** SearchService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class SearchService extends BaseService {
-  searchWithQuery(query: string) {
-    if (!EP.search) return this.unsupported('search.searchWithQuery')
-    return this.listAt(EP.search, { search: query })
-  }
-  searchWithUrl(url: URL, slug?: string) {
-    if (!EP.search) return this.unsupported('search.searchWithUrl')
-    void slug
-    return this.listAt(EP.search, { search: url.searchParams.get('q') || '' })
-  }
-  emptyResult() {
-    return { data: [], total: 0, page: 1, perPage: 0 }
-  }
+  private static instance: SearchService
+  static getInstance(): SearchService { if (!SearchService.instance) SearchService.instance = new SearchService(); return SearchService.instance }
+  async searchWithUrl(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async searchWithQuery(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async emptyResult(..._args: any[]): Promise<any> { return { data: [], count: 0, pageSize: 0, noOfPage: 0, page: 1 } }
 }
+export const searchService = SearchService.getInstance()

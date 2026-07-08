@@ -1,19 +1,22 @@
 import { BaseService } from './base.service'
-
+/** CheckoutService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class CheckoutService extends BaseService {
-  getShippingRates(data: Record<string, unknown>) { void data; return this.unsupported('checkout.getShippingRates') }
-  checkoutCOD(data: Record<string, unknown>) { void data; return this.unsupported('checkout.checkoutCOD') }
-  checkoutPOS(data: Record<string, unknown>) { void data; return this.unsupported('checkout.checkoutPOS') }
-  checkoutRazorpay(data: Record<string, unknown>) { void data; return this.unsupported('checkout.checkoutRazorpay') }
-  captureRazorpayPayment(data: Record<string, unknown>) { void data; return this.unsupported('checkout.captureRazorpayPayment') }
-  checkoutPhonepe(data: Record<string, unknown>) { void data; return this.unsupported('checkout.checkoutPhonepe') }
-  capturePhonepePayment(data: Record<string, unknown>) { void data; return this.unsupported('checkout.capturePhonepePayment') }
-  checkoutPaypal(data: Record<string, unknown>) { void data; return this.unsupported('checkout.checkoutPaypal') }
-  checkoutStripe(data: Record<string, unknown>) { void data; return this.unsupported('checkout.checkoutStripe') }
-  checkoutStripeCapture(data: Record<string, unknown>) { void data; return this.unsupported('checkout.checkoutStripeCapture') }
-  checkoutCashfree(data: Record<string, unknown>) { void data; return this.unsupported('checkout.checkoutCashfree') }
-  captureCashfreePayment(data: Record<string, unknown>) { void data; return this.unsupported('checkout.captureCashfreePayment') }
-  createAffirmPayOrder(data: Record<string, unknown>) { void data; return this.unsupported('checkout.createAffirmPayOrder') }
-  cancelAffirmOrder(data: Record<string, unknown>) { void data; return this.unsupported('checkout.cancelAffirmOrder') }
-  confirmAffirmOrder(data: Record<string, unknown>) { void data; return this.unsupported('checkout.confirmAffirmOrder') }
+  private static instance: CheckoutService
+  static getInstance(): CheckoutService { if (!CheckoutService.instance) CheckoutService.instance = new CheckoutService(); return CheckoutService.instance }
+  async checkoutRazorpay(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async checkoutCOD(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async checkoutPOS(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async captureRazorpayPayment(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async checkoutPhonepe(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async getShippingRates(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async capturePhonepePayment(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async checkoutPaypal(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async checkoutStripe(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async checkoutStripeCapture(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async checkoutCashfree(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async captureCashfreePayment(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async createAffirmPayOrder(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async cancelAffirmOrder(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async confirmAffirmOrder(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const checkoutService = CheckoutService.getInstance()

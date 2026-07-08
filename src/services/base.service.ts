@@ -1,71 +1,67 @@
-import type { ConnectorConfig } from '../config'
+import type { Credentials } from '../config'
 
+/**
+ * BaseService — shared REST client for the WooCommerce connector.
+ * - Credentials via static setCredentials (client + server hooks), not constructors.
+ * - Server-side: constructed with a custom fetch (cookies). Client-side: singletons.
+ * - Unsuccessful responses THROW the parsed body (always carrying `message`).
+ * - refreshCredentials() is an overridable hook for vendors with short-lived tokens.
+ */
 export const API_BASE = '/wp-json/wc/v3'
 
-/** NotSupported error thrown when a resource has no WooCommerce API equivalent. */
-export class NotSupportedError extends Error {
-  code = 'NOT_SUPPORTED' as const
-  constructor(feature: string) {
-    super(`${feature} is not supported by the WooCommerce connector`)
-    this.name = 'NotSupportedError'
-  }
-}
-
 export class BaseService {
-  protected config: ConnectorConfig
-  private _fetch: typeof fetch
+  private static _credentials: Credentials = { apiUrl: '' }
+  protected _fetch: typeof fetch
+  constructor(fetchFn?: typeof fetch) { this._fetch = fetchFn || (globalThis.fetch as typeof fetch) }
 
-  constructor(config: ConnectorConfig) {
-    this.config = config
-    this._fetch = config.fetchFn || fetch
+  static setCredentials(creds: Partial<Credentials>): void {
+    BaseService._credentials = { ...BaseService._credentials, ...creds }
   }
+  static getCredentials(): Credentials { return BaseService._credentials }
+  protected get creds(): Credentials { return BaseService._credentials }
 
-  protected unsupported(feature: string): never {
-    throw new NotSupportedError(feature)
-  }
-
-  protected authHeaders(): Record<string, string> {
-    const token = btoa(`${this.config.apiKey ?? ''}:${this.config.apiSecret ?? ''}`)
-    return { Authorization: `Basic ${token}` }
-  }
+  protected authHeaders(): Record<string, string> { return { Authorization: `Basic ${btoa(`${this.creds.apiKey ?? ''}:${this.creds.apiSecret ?? ''}`)}` } }
 
   protected url(path: string): string {
-    const u = new URL(this.config.baseUrl.replace(/\/$/, '') + API_BASE + path)
-    return u.toString()
+    const root = (this.creds.apiUrl || '').replace(/\/$/, '') + API_BASE
+    return root + path
   }
 
-  /** Paginated list against `path` using the WooCommerce query convention. */
-  protected listAt(path: string, { page = 1, perPage = 20, search = '' }: { page?: number; perPage?: number; search?: string } = {}): Promise<unknown> {
-    const params = new URLSearchParams()
-    params.set('page', String(page))
-    params.set('per_page', String(perPage))
-    if (search) params.set('search', search)
-    return this.get(`${path}?${params.toString()}`)
-  }
-
-  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json', Accept: 'application/json',
-      ...this.authHeaders(), ...(init.headers as Record<string, string> | undefined),
-    }
-    let response: Response
+  protected async request<T = any>(path: string, init: RequestInit = {}, _retried = false): Promise<T> {
+    let res: Response
     try {
-      response = await this._fetch(this.url(path), { ...init, headers })
-    } catch {
-      throw { message: 'Unable to reach the WooCommerce server. Please try again in a moment.' }
-    }
-    if (!response.ok) {
-      const ct = response.headers.get('Content-Type') || ''
-      const body = ct.includes('json') ? await response.json().catch(() => ({})) : await response.text()
-      throw { message: `WooCommerce API error ${response.status} ${response.statusText}`, status: response.status, body }
-    }
-    if (response.status === 204) return undefined as T
-    return (await response.json()) as T
+      res = await this._fetch(this.url(path), {
+        ...init,
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...this.authHeaders(), ...(init.headers as any) }
+      })
+    } catch { throw { message: 'Unable to reach the server. Please try again in a moment.' } }
+    if (res.status === 401 && !_retried && (await this.refreshCredentials())) return this.request<T>(path, init, true)
+    if (!res.ok) throw this.toError(await this.safeJson(res), `Request failed with status ${res.status}`)
+    if (res.status === 204) return undefined as T
+    return (await this.safeJson(res)) as T
   }
+  get<T = any>(path: string) { return this.request<T>(path, { method: 'GET' }) }
+  post<T = any>(path: string, data?: unknown) { return this.request<T>(path, { method: 'POST', body: data === undefined ? undefined : JSON.stringify(data) }) }
+  put<T = any>(path: string, data?: unknown) { return this.request<T>(path, { method: 'PUT', body: data === undefined ? undefined : JSON.stringify(data) }) }
+  patch<T = any>(path: string, data?: unknown) { return this.request<T>(path, { method: 'PATCH', body: data === undefined ? undefined : JSON.stringify(data) }) }
+  delete<T = any>(path: string) { return this.request<T>(path, { method: 'DELETE' }) }
 
-  get<T = unknown>(path: string): Promise<T> { return this.request<T>(path, { method: 'GET' }) }
-  post<T = unknown>(path: string, data?: unknown): Promise<T> { return this.request<T>(path, { method: 'POST', body: data === undefined ? undefined : JSON.stringify(data) }) }
-  put<T = unknown>(path: string, data?: unknown): Promise<T> { return this.request<T>(path, { method: 'PUT', body: data === undefined ? undefined : JSON.stringify(data) }) }
-  patch<T = unknown>(path: string, data?: unknown): Promise<T> { return this.request<T>(path, { method: 'PATCH', body: data === undefined ? undefined : JSON.stringify(data) }) }
-  delete<T = unknown>(path: string): Promise<T> { return this.request<T>(path, { method: 'DELETE' }) }
+  /** Overridable: re-issue short-lived credentials for vendors that need it. */
+  protected async refreshCredentials(): Promise<boolean> { return false }
+
+  private async safeJson(res: Response): Promise<any> { try { return await res.json() } catch { return {} } }
+  protected toError(body: any, fallback: string): { message: string; [k: string]: any } {
+    if (body && typeof body === 'object') {
+      const message = body.message || body.error || (Array.isArray(body.errors) ? body.errors.map((e: any) => e?.message || e).filter(Boolean).join('; ') : '') || fallback
+      return { ...body, message: String(message) }
+    }
+    return { message: typeof body === 'string' && body ? body : fallback }
+  }
+  protected dummy<T>(value: T): Promise<T> { return Promise.resolve(value) }
+  protected emptyPage<T = any>() { return this.dummy({ data: [] as T[], count: 0, pageSize: 0, noOfPage: 0, page: 1 }) }
+  protected setCookie(name: string, value: string, days = 30): void {
+    if (typeof document === 'undefined') return
+    const expires = new Date(Date.now() + days * 864e5).toUTCString()
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`
+  }
 }

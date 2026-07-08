@@ -1,16 +1,10 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** CollectionService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class CollectionService extends BaseService {
-  list(opts: { page?: number; perPage?: number; search?: string } = {}) {
-    const path = EP.collections || EP.categories
-    if (!path) return this.unsupported('collection.list')
-    return this.listAt(path, opts)
-  }
-  getOne(id: string | number) {
-    const path = EP.collections || EP.categories
-    if (!path) return this.unsupported('collection.getOne')
-    return this.get(`${path}/${id}`)
-  }
-  getAllRatings() { return this.unsupported('collection.getAllRatings') }
+  private static instance: CollectionService
+  static getInstance(): CollectionService { if (!CollectionService.instance) CollectionService.instance = new CollectionService(); return CollectionService.instance }
+  async list(..._args: any[]): Promise<any> { return this.emptyPage() }
+  async getOne(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async getAllRatings(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const collectionService = CollectionService.getInstance()

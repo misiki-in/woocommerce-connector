@@ -1,7 +1,10 @@
 import { BaseService } from './base.service'
-
+/** UploadService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class UploadService extends BaseService {
-  uploadToS3(data: Record<string, unknown>) { void data; return this.unsupported('upload.uploadToS3') }
-  uploadMultipleToS3(data: Record<string, unknown>) { void data; return this.unsupported('upload.uploadMultipleToS3') }
-  deleteFromS3(data: Record<string, unknown>) { void data; return this.unsupported('upload.deleteFromS3') }
+  private static instance: UploadService
+  static getInstance(): UploadService { if (!UploadService.instance) UploadService.instance = new UploadService(); return UploadService.instance }
+  async uploadToS3(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async uploadMultipleToS3(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async deleteFromS3(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const uploadService = UploadService.getInstance()

@@ -1,13 +1,9 @@
 import { BaseService } from './base.service'
-import { EP } from '../endpoints'
-
+/** ProfileService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
 export class ProfileService extends BaseService {
-  getOne() {
-    if (!EP.customers) return this.unsupported('profile.getOne')
-    return this.get(EP.customers)
-  }
-  save(data: Record<string, unknown>) {
-    if (!EP.customers) return this.unsupported('profile.save')
-    return this.post(EP.customers, data)
-  }
+  private static instance: ProfileService
+  static getInstance(): ProfileService { if (!ProfileService.instance) ProfileService.instance = new ProfileService(); return ProfileService.instance }
+  async getOne(..._args: any[]): Promise<any> { return this.dummy({}) }
+  async save(..._args: any[]): Promise<any> { return this.dummy({}) }
 }
+export const profileService = ProfileService.getInstance()
