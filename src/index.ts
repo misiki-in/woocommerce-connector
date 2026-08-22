@@ -1,4 +1,5 @@
 export * from './config'
+export * from './errors'
 export * from './types/index'
 export * from './services/index'
 export * from './client'

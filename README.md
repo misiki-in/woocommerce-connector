@@ -5,8 +5,10 @@
 TypeScript API connector for **[WooCommerce](https://woocommerce.com)** — part of the [Litekart](https://litekart.in) connector suite.
 Full 43-service surface mirroring [`@misiki/litekart-connector`](https://github.com/misiki-in/litekart-connector).
 
-> **Coverage:** 17/43 services are wired to the live WooCommerce REST API.
-> The rest are present for interface parity and throw `NotSupportedError` (WooCommerce has no equivalent endpoint).
+> **Coverage:** 2 of 43 services (`category`, `product`) are wired to the live WooCommerce API.
+> The remaining 41 are present for interface parity and return empty placeholder data without
+> contacting WooCommerce — except `client.auth`, which throws `NotSupportedError` rather than
+> fabricating a session. See the coverage table below before relying on a service.
 
 ## Installation
 
@@ -16,7 +18,7 @@ npm install @misiki/woocommerce-connector
 
 ## Configuration
 
-Pass `baseUrl` (store URL), `apiKey` (consumer key `ck_...`), `apiSecret` (consumer secret `cs_...`).
+Pass `apiUrl` (store URL), `apiKey` (consumer key `ck_...`), `apiSecret` (consumer secret `cs_...`).
 API docs: https://woocommerce.github.io/woocommerce-rest-api-docs/
 
 ## Usage
@@ -24,13 +26,16 @@ API docs: https://woocommerce.github.io/woocommerce-rest-api-docs/
 ```ts
 import { WooCommerceConnector } from '@misiki/woocommerce-connector'
 
-const client = new WooCommerceConnector({
-  "baseUrl": "https://store.example.com",
-  "apiKey": "ck_xxx",
-  "apiSecret": "cs_xxx"
+// Credentials are set once, statically — the constructor only takes an optional fetch.
+WooCommerceConnector.setCredentials({
+  apiUrl: 'https://store.example.com',
+  apiKey: 'ck_xxx',
+  apiSecret: 'cs_xxx'
 })
 
-const products = await client.product.list({ page: 1, perPage: 10 })
+const client = new WooCommerceConnector()
+
+const products = await client.product.list({ page: 1, sort: '-createdAt' })
 ```
 
 ## Service coverage
@@ -39,47 +44,47 @@ const products = await client.product.list({ page: 1, perPage: 10 })
 | --- | --- |
 | `client.product` | ✅ live |
 | `client.category` | ✅ live |
-| `client.collection` | ✅ live |
-| `client.order` | ✅ live |
-| `client.coupon` | ✅ live |
-| `client.address` | ⚠️ stub (NotSupported) |
-| `client.review` | ✅ live |
-| `client.cart` | ⚠️ stub (NotSupported) |
-| `client.country` | ✅ live |
-| `client.state` | ⚠️ stub (NotSupported) |
-| `client.currency` | ✅ live |
-| `client.region` | ✅ live |
-| `client.page` | ⚠️ stub (NotSupported) |
-| `client.blog` | ⚠️ stub (NotSupported) |
-| `client.settings` | ✅ live |
-| `client.store` | ✅ live |
-| `client.paymentMethod` | ✅ live |
-| `client.search` | ✅ live |
-| `client.autocomplete` | ✅ live |
-| `client.user` | ✅ live |
-| `client.auth` | ✅ live |
-| `client.profile` | ✅ live |
-| `client.wishlist` | ⚠️ stub (NotSupported) |
-| `client.vendor` | ⚠️ stub (NotSupported) |
-| `client.checkout` | ⚠️ stub (NotSupported) |
-| `client.upload` | ⚠️ stub (NotSupported) |
-| `client.banner` | ⚠️ stub (NotSupported) |
-| `client.chat` | ⚠️ stub (NotSupported) |
-| `client.contact` | ⚠️ stub (NotSupported) |
-| `client.deal` | ⚠️ stub (NotSupported) |
-| `client.demoRequest` | ⚠️ stub (NotSupported) |
-| `client.enquiry` | ⚠️ stub (NotSupported) |
-| `client.faq` | ⚠️ stub (NotSupported) |
-| `client.feedback` | ⚠️ stub (NotSupported) |
-| `client.gallery` | ⚠️ stub (NotSupported) |
-| `client.home` | ⚠️ stub (NotSupported) |
-| `client.init` | ⚠️ stub (NotSupported) |
-| `client.meilisearch` | ⚠️ stub (NotSupported) |
-| `client.menu` | ⚠️ stub (NotSupported) |
-| `client.plugins` | ⚠️ stub (NotSupported) |
-| `client.popularSearch` | ⚠️ stub (NotSupported) |
-| `client.popularity` | ⚠️ stub (NotSupported) |
-| `client.reels` | ⚠️ stub (NotSupported) |
+| `client.collection` | ⚠️ placeholder (returns empty data) |
+| `client.order` | ⚠️ placeholder (returns empty data) |
+| `client.coupon` | ⚠️ placeholder (returns empty data) |
+| `client.address` | ⚠️ placeholder (returns empty data) |
+| `client.review` | ⚠️ placeholder (returns empty data) |
+| `client.cart` | ⚠️ placeholder (returns empty data) |
+| `client.country` | ⚠️ placeholder (returns empty data) |
+| `client.state` | ⚠️ placeholder (returns empty data) |
+| `client.currency` | ⚠️ placeholder (returns empty data) |
+| `client.region` | ⚠️ placeholder (returns empty data) |
+| `client.page` | ⚠️ placeholder (returns empty data) |
+| `client.blog` | ⚠️ placeholder (returns empty data) |
+| `client.settings` | ⚠️ placeholder (returns empty data) |
+| `client.store` | ⚠️ placeholder (returns empty data) |
+| `client.paymentMethod` | ⚠️ placeholder (returns empty data) |
+| `client.search` | ⚠️ placeholder (returns empty data) |
+| `client.autocomplete` | ⚠️ placeholder (returns empty data) |
+| `client.user` | ⚠️ placeholder (returns empty data) |
+| `client.auth` | ⛔ throws `NotSupportedError` |
+| `client.profile` | ⚠️ placeholder (returns empty data) |
+| `client.wishlist` | ⚠️ placeholder (returns empty data) |
+| `client.vendor` | ⚠️ placeholder (returns empty data) |
+| `client.checkout` | ⚠️ placeholder (returns empty data) |
+| `client.upload` | ⚠️ placeholder (returns empty data) |
+| `client.banner` | ⚠️ placeholder (returns empty data) |
+| `client.chat` | ⚠️ placeholder (returns empty data) |
+| `client.contact` | ⚠️ placeholder (returns empty data) |
+| `client.deal` | ⚠️ placeholder (returns empty data) |
+| `client.demoRequest` | ⚠️ placeholder (returns empty data) |
+| `client.enquiry` | ⚠️ placeholder (returns empty data) |
+| `client.faq` | ⚠️ placeholder (returns empty data) |
+| `client.feedback` | ⚠️ placeholder (returns empty data) |
+| `client.gallery` | ⚠️ placeholder (returns empty data) |
+| `client.home` | ⚠️ placeholder (returns empty data) |
+| `client.init` | ⚠️ placeholder (returns empty data) |
+| `client.meilisearch` | ⚠️ placeholder (returns empty data) |
+| `client.menu` | ⚠️ placeholder (returns empty data) |
+| `client.plugins` | ⚠️ placeholder (returns empty data) |
+| `client.popularSearch` | ⚠️ placeholder (returns empty data) |
+| `client.popularity` | ⚠️ placeholder (returns empty data) |
+| `client.reels` | ⚠️ placeholder (returns empty data) |
 
 ## Development
 

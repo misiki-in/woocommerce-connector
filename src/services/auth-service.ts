@@ -1,53 +1,41 @@
 import type { User } from '../types'
+import { NotSupportedError } from '../errors'
 import { BaseService } from './base.service'
 
-const dummyUser = (over: Partial<User> = {}): User => ({
-  id: over.id || 'user_dummy', email: over.email || '', phone: null, firstName: over.firstName ?? null,
-  lastName: over.lastName ?? null, avatar: null, role: 'USER', status: 'active', cartId: null,
-  isApproved: true, isDeleted: false, isEmailVerified: true, isPhoneVerified: false,
-  signInCount: 1, otpAttempt: 0, userAuthToken: null,
-  createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...over
-})
-
 /**
- * AuthService — WooCommerce. The kitcommerce-core auth-state (me + connect.sid
- * cookies, role: 'USER') is set on login regardless of vendor auth. Vendor-specific
- * login is best-effort and should be tuned per vendor.
+ * AuthService — WooCommerce.
+ *
+ * Authentication is NOT yet wired to WooCommerce. Every method that would
+ * establish or report an identity throws NotSupportedError rather than
+ * fabricating one: returning a synthetic user here would hand the consuming
+ * app a logged-in session for any credentials, which is an auth bypass.
+ *
+ * logout() remains functional because clearing local cookies is correct
+ * regardless of how the session was established.
  */
 export class AuthService extends BaseService {
   private static instance: AuthService
   static getInstance(): AuthService { if (!AuthService.instance) AuthService.instance = new AuthService(); return AuthService.instance }
 
-  private setAuthCookies(user: User): void {
-    this.setCookie('connect.sid', `s:${user.id || 'session'}.${Date.now()}`)
-    this.setCookie('me', JSON.stringify({
-      userId: user.id || null, phone: user.phone ?? null, email: user.email || null,
-      firstName: user.firstName ?? null, lastName: user.lastName ?? null, avatar: user.avatar ?? null,
-      role: 'USER', storeId: this.creds.storeId || null
-    }))
+  private unsupported(method: string): never {
+    throw new NotSupportedError('AuthService', method, 'WooCommerce authentication is not implemented yet')
   }
 
-  async login({ email }: { email: string; password: string; cartId?: string | null }): Promise<User> {
-    // Vendor-specific authentication would set access tokens here; the auth-state
-    // cookies below are what kitcommerce-core relies on.
-    const user = dummyUser({ email })
-    this.setAuthCookies(user)
-    return user
-  }
-  async getMe(): Promise<User> { return dummyUser() }
-  async getUser(id: string): Promise<User> { return dummyUser({ id }) }
-  async signup(a: { firstName: string; lastName: string; email: string; password: string }): Promise<User> {
-    const user = dummyUser({ email: a.email, firstName: a.firstName, lastName: a.lastName }); this.setAuthCookies(user); return user
-  }
+  async login(_a: { email: string; password: string; cartId?: string | null }): Promise<User> { return this.unsupported('login') }
+  async signup(_a: { firstName: string; lastName: string; email: string; password: string }): Promise<User> { return this.unsupported('signup') }
+  async getMe(): Promise<User> { return this.unsupported('getMe') }
+  async getUser(_id: string): Promise<User> { return this.unsupported('getUser') }
+  async updateProfile(_a: { id: string; firstName?: string; lastName?: string; email?: string }): Promise<User> { return this.unsupported('updateProfile') }
+  async verifyEmail(_e: string, _t: string): Promise<never> { return this.unsupported('verifyEmail') }
+  async forgotPassword(_a: any): Promise<never> { return this.unsupported('forgotPassword') }
+  async changePassword(_a: any): Promise<never> { return this.unsupported('changePassword') }
+  async resetPassword(_a: any): Promise<never> { return this.unsupported('resetPassword') }
+  async getOtp(_a: any): Promise<never> { return this.unsupported('getOtp') }
+  async verifyOtp(_a: any): Promise<never> { return this.unsupported('verifyOtp') }
+  async joinAsVendor(_a: any): Promise<never> { return this.unsupported('joinAsVendor') }
+  async joinAsAdmin(_a: any): Promise<never> { return this.unsupported('joinAsAdmin') }
+
+  /** Clears the local auth cookies. Safe to call regardless of auth backend. */
   async logout() { this.setCookie('connect.sid', '', -1); this.setCookie('me', '', -1); return this.dummy({ success: true }) }
-  async verifyEmail(_e: string, _t: string) { return this.dummy({ success: true }) }
-  async forgotPassword(_a: any) { return this.dummy({ success: true }) }
-  async changePassword(_a: any) { return this.dummy({ success: true }) }
-  async resetPassword(_a: any) { return this.dummy({ success: true }) }
-  async getOtp(_a: any) { return this.dummy({ success: true }) }
-  async verifyOtp(_a: any) { return this.dummy({ success: true }) }
-  async joinAsVendor(_a: any) { return this.dummy({ success: true }) }
-  async joinAsAdmin(_a: any) { return this.dummy({ success: true }) }
-  async updateProfile(a: { id: string; firstName?: string; lastName?: string; email?: string }) { return dummyUser({ id: a.id, email: a.email, firstName: a.firstName, lastName: a.lastName }) }
 }
 export const authService = AuthService.getInstance()
