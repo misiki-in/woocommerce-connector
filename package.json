@@ -1,6 +1,6 @@
 {
   "name": "@misiki/woocommerce-connector",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "TypeScript API connector for WooCommerce — part of the Litekart connector suite.",
   "type": "module",
   "main": "./dist/index.cjs",
