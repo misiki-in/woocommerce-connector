@@ -1,27 +1,52 @@
 # @misiki/woocommerce-connector
 
+[![NPM Version](https://img.shields.io/npm/v/@misiki/woocommerce-connector.svg)](https://www.npmjs.com/package/@misiki/woocommerce-connector)
+[![License](https://img.shields.io/npm/l/@misiki/woocommerce-connector.svg)](https://github.com/misiki-in/woocommerce-connector/blob/main/LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-TypeScript API connector for **[WooCommerce](https://woocommerce.com)** — part of the [Litekart](https://litekart.in) connector suite.
-Full 43-service surface mirroring [`@misiki/litekart-connector`](https://github.com/misiki-in/litekart-connector).
+**The Official TypeScript API Connector for connecting `svelte-commerce` to WooCommerce E-Commerce Backend.**
 
-> **Coverage:** 2 of 43 services (`category`, `product`) are wired to the live WooCommerce API.
-> The remaining 41 are present for interface parity and return empty placeholder data without
-> contacting WooCommerce — except `client.auth`, which throws `NotSupportedError` rather than
-> fabricating a session. See the coverage table below before relying on a service.
+`@misiki/woocommerce-connector` provides a production-ready, fully-typed API client and integration layer that seamlessly bridges [svelte-commerce](https://github.com/misiki-in/svelte-commerce) storefronts with [WooCommerce](https://woocommerce.com) headless e-commerce backends — part of the [Litekart](https://litekart.in) connector suite, mirroring the full 43-service surface of [`@misiki/litekart-connector`](https://github.com/misiki-in/litekart-connector).
 
-## Installation
+> **Coverage:** 27 of 43 services are wired to the live WooCommerce API.
+> The remaining 16 have no WooCommerce equivalent and return empty placeholder
+> data — except `client.auth`, which throws `NotSupportedError` rather than fabricating a
+> session. Each placeholder says why in a comment at the top of its service file.
+
+---
+
+## 🚀 Step-by-Step Integration Guide
+
+Follow these steps to connect `svelte-commerce` with `woocommerce-connector` and your WooCommerce backend.
+
+### 1. Install the Connector
+
+Inside your `svelte-commerce` project directory, run:
 
 ```bash
-npm install @misiki/woocommerce-connector
+bun i @misiki/woocommerce-connector
 ```
 
-## Configuration
+*(Or using npm / pnpm / yarn):*
+```bash
+npm install @misiki/woocommerce-connector
+# or
+pnpm add @misiki/woocommerce-connector
+```
+
+### 2. Configure `kitcommerce.config.ts`
+
+In `svelte-commerce`, open `kitcommerce.config.ts` and change the `export *` line to import from `@misiki/woocommerce-connector`:
+
+```typescript
+// kitcommerce.config.ts
+export * from '@misiki/woocommerce-connector';
+```
+
+### 3. Configure Credentials
 
 Pass `apiUrl` (store URL), `apiKey` (consumer key `ck_...`), `apiSecret` (consumer secret `cs_...`).
 API docs: https://woocommerce.github.io/woocommerce-rest-api-docs/
-
-## Usage
 
 ```ts
 import { WooCommerceConnector } from '@misiki/woocommerce-connector'
@@ -38,53 +63,71 @@ const client = new WooCommerceConnector()
 const products = await client.product.list({ page: 1, sort: '-createdAt' })
 ```
 
+### 4. Build and Run the Project
+
+Run the development server in `svelte-commerce`:
+
+```bash
+bun dev
+```
+
+To build and run the production application:
+
+```bash
+# Build the project
+bun run build
+
+# Preview the built application
+bun run preview
+```
+
 ## Service coverage
 
 | Service | Status |
 | --- | --- |
 | `client.product` | ✅ live |
 | `client.category` | ✅ live |
-| `client.collection` | ⚠️ placeholder (returns empty data) |
-| `client.order` | ⚠️ placeholder (returns empty data) |
-| `client.coupon` | ⚠️ placeholder (returns empty data) |
-| `client.address` | ⚠️ placeholder (returns empty data) |
-| `client.review` | ⚠️ placeholder (returns empty data) |
-| `client.cart` | ⚠️ placeholder (returns empty data) |
-| `client.country` | ⚠️ placeholder (returns empty data) |
-| `client.state` | ⚠️ placeholder (returns empty data) |
-| `client.currency` | ⚠️ placeholder (returns empty data) |
-| `client.region` | ⚠️ placeholder (returns empty data) |
-| `client.page` | ⚠️ placeholder (returns empty data) |
-| `client.blog` | ⚠️ placeholder (returns empty data) |
-| `client.settings` | ⚠️ placeholder (returns empty data) |
-| `client.store` | ⚠️ placeholder (returns empty data) |
-| `client.paymentMethod` | ⚠️ placeholder (returns empty data) |
-| `client.search` | ⚠️ placeholder (returns empty data) |
-| `client.autocomplete` | ⚠️ placeholder (returns empty data) |
-| `client.user` | ⚠️ placeholder (returns empty data) |
+| `client.collection` | ✅ live |
+| `client.order` | ✅ live |
+| `client.coupon` | ✅ live |
+| `client.address` | ✅ live |
+| `client.review` | ✅ live |
+| `client.cart` | ✅ live |
+| `client.country` | ✅ live |
+| `client.state` | ✅ live |
+| `client.currency` | ✅ live |
+| `client.region` | ✅ live |
+| `client.page` | ✅ live |
+| `client.blog` | ✅ live |
+| `client.settings` | ✅ live |
+| `client.store` | ✅ live |
+| `client.paymentMethod` | ✅ live |
+| `client.search` | ✅ live |
+| `client.autocomplete` | ✅ live |
+| `client.user` | ✅ live |
 | `client.auth` | ⛔ throws `NotSupportedError` |
-| `client.profile` | ⚠️ placeholder (returns empty data) |
-| `client.wishlist` | ⚠️ placeholder (returns empty data) |
-| `client.vendor` | ⚠️ placeholder (returns empty data) |
-| `client.checkout` | ⚠️ placeholder (returns empty data) |
-| `client.upload` | ⚠️ placeholder (returns empty data) |
-| `client.banner` | ⚠️ placeholder (returns empty data) |
-| `client.chat` | ⚠️ placeholder (returns empty data) |
-| `client.contact` | ⚠️ placeholder (returns empty data) |
-| `client.deal` | ⚠️ placeholder (returns empty data) |
-| `client.demoRequest` | ⚠️ placeholder (returns empty data) |
-| `client.enquiry` | ⚠️ placeholder (returns empty data) |
-| `client.faq` | ⚠️ placeholder (returns empty data) |
-| `client.feedback` | ⚠️ placeholder (returns empty data) |
-| `client.gallery` | ⚠️ placeholder (returns empty data) |
-| `client.home` | ⚠️ placeholder (returns empty data) |
-| `client.init` | ⚠️ placeholder (returns empty data) |
-| `client.meilisearch` | ⚠️ placeholder (returns empty data) |
-| `client.menu` | ⚠️ placeholder (returns empty data) |
-| `client.plugins` | ⚠️ placeholder (returns empty data) |
-| `client.popularSearch` | ⚠️ placeholder (returns empty data) |
-| `client.popularity` | ⚠️ placeholder (returns empty data) |
-| `client.reels` | ⚠️ placeholder (returns empty data) |
+| `client.profile` | ✅ live |
+| `client.wishlist` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.vendor` | ✅ live |
+| `client.checkout` | ✅ live |
+| `client.upload` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.banner` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.chat` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.contact` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.deal` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.demoRequest` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.enquiry` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.faq` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.feedback` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.gallery` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.home` | ✅ live |
+| `client.init` | ✅ live |
+| `client.meilisearch` | ✅ live |
+| `client.menu` | ✅ live |
+| `client.plugins` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.popularSearch` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.popularity` | ⚠️ placeholder (no WooCommerce equivalent) |
+| `client.reels` | ⚠️ placeholder (no WooCommerce equivalent) |
 
 ## Development
 
@@ -94,4 +137,4 @@ bun install && bun run typecheck && bun run build
 
 ## License
 
-ISC © misiki-in
+MIT © misiki-in
