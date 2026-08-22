@@ -1,7 +1,7 @@
 {
   "name": "@misiki/woocommerce-connector",
   "version": "0.3.1",
-  "description": "TypeScript API connector for WooCommerce — part of the Litekart connector suite.",
+  "description": "API Connector for WooCommerce with Svelte Commerce",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -32,12 +32,16 @@
     "p": "tsup && npm publish --access public"
   },
   "keywords": [
+    "woocommerce",
     "litekart",
     "connector",
     "ecommerce",
-    "woocommerce",
-    "sdk",
-    "typescript"
+    "headless",
+    "storefront",
+    "api",
+    "integration",
+    "typescript",
+    "svelte"
   ],
   "author": "misiki-in",
   "license": "ISC",
