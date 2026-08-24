@@ -1,5 +1,5 @@
 import { BaseService } from './base.service'
-/** GalleryService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
+/** GalleryService — present-but-dummy (mirrors the storefront contract); returns dummy data, never throws. */
 export class GalleryService extends BaseService {
   private static instance: GalleryService
   static getInstance(): GalleryService { if (!GalleryService.instance) GalleryService.instance = new GalleryService(); return GalleryService.instance }

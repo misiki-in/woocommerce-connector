@@ -6,7 +6,7 @@ const PRODUCT_FIELDS = { id: 'id', title: 'name', slug: 'slug', price: 'price', 
 const CATEGORY_FIELDS = { id: 'id', title: 'name', slug: 'slug' } as const
 
 /**
- * Home section. litekart's `Home` (src/types/common-types.ts) is just `{ name: string }`;
+ * Home section. The storefront contract's `Home` is just `{ name: string }`;
  * the extra fields are additive so the composed payload is actually usable.
  */
 export type Home = {
@@ -16,7 +16,7 @@ export type Home = {
   categories?: Category[]
 }
 
-/** HomeService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** HomeService — WooCommerce. Signatures mirror the storefront contract. */
 export class HomeService extends BaseService {
   private static instance: HomeService
   static getInstance(): HomeService { if (!HomeService.instance) HomeService.instance = new HomeService(); return HomeService.instance }

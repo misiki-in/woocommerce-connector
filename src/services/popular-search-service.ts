@@ -2,7 +2,7 @@ import type { PaginatedResponse } from '../types'
 import { BaseService } from './base.service'
 
 /**
- * PopularSearchService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * PopularSearchService — WooCommerce. Signatures mirror the storefront contract.
  *
  * NOT SUPPORTED: WooCommerce never records the search terms shoppers type. There is no
  * such resource on /wc/v3, on the Store API, or in WordPress core — search analytics only
@@ -11,7 +11,7 @@ import { BaseService } from './base.service'
  * WooCommerce route would mean inventing one.
  */
 
-/** Popular search row — mirrors @misiki/litekart-connector's PopularSearch. */
+/** Popular search row — mirrors the storefront contract's PopularSearch. */
 export type PopularSearch = {
   id: string
   searchTerm: string

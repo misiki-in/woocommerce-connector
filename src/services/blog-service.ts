@@ -3,7 +3,7 @@ import { getPath } from '../mappers/generic.mapper'
 import { BaseService, WP_API_BASE } from './base.service'
 
 /**
- * Blog post, mirrored from @misiki/litekart-connector's `Blog` (src/types/content-types.ts).
+ * Blog post, mirrored from the storefront contract's `Blog`.
  * Declared locally because the WooCommerce connector's src/types/index.ts only carries the
  * commerce types. `featuredImage`/`slug`/`excerpt` are additive conveniences.
  */
@@ -73,7 +73,7 @@ function mapBlog(raw: any): Blog {
   }
 }
 
-/** BlogService — WooCommerce/WordPress. Signatures mirror @misiki/litekart-connector. */
+/** BlogService — WooCommerce/WordPress. Signatures mirror the storefront contract. */
 export class BlogService extends BaseService {
   private static instance: BlogService
   static getInstance(): BlogService { if (!BlogService.instance) BlogService.instance = new BlogService(); return BlogService.instance }

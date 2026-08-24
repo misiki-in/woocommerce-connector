@@ -1,7 +1,7 @@
 import { BaseService } from './base.service'
 
 /**
- * Bootstrap payload. litekart's `Init` (src/types/common-types.ts) is just `{ name: string }`;
+ * Bootstrap payload. The storefront contract's `Init` is just `{ name: string }`;
  * the extra fields are additive so the composed payload is actually usable.
  */
 export type Init = {
@@ -26,7 +26,7 @@ function optionMap(raw: WooSettingOption[] | undefined): Record<string, unknown>
 
 const str = (v: unknown): string | undefined => (v === undefined || v === null || v === '' ? undefined : String(v))
 
-/** InitService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** InitService — WooCommerce. Signatures mirror the storefront contract. */
 export class InitService extends BaseService {
   private static instance: InitService
   static getInstance(): InitService { if (!InitService.instance) InitService.instance = new InitService(); return InitService.instance }
@@ -38,7 +38,7 @@ export class InitService extends BaseService {
    *   GET /data/currencies/current https://woocommerce.github.io/woocommerce-rest-api-docs/#retrieve-current-currency
    *   GET /payment_gateways        https://woocommerce.github.io/woocommerce-rest-api-docs/#payment-gateways
    *
-   * Returned as a one-element array to match litekart's `Init[]`. `/system_status` is
+   * Returned as a one-element array to match the storefront's `Init[]`. `/system_status` is
    * deliberately not included: it is a heavy admin diagnostic payload and needs a
    * manager-scoped key, so it would turn a storefront boot into a 401 on read-only keys.
    */

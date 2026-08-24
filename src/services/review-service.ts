@@ -3,7 +3,7 @@ import { BaseService } from './base.service'
 import { PRODUCT_PAGE_SIZE, WOO_MAX_PER_PAGE } from './product-service'
 
 /**
- * ReviewService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * ReviewService — WooCommerce. Signatures mirror the storefront contract.
  *
  *   GET  /products/reviews   https://woocommerce.github.io/woocommerce-rest-api-docs/#list-all-product-reviews
  *   POST /products/reviews   https://woocommerce.github.io/woocommerce-rest-api-docs/#create-a-product-review
@@ -17,11 +17,11 @@ import { PRODUCT_PAGE_SIZE, WOO_MAX_PER_PAGE } from './product-service'
  */
 
 /**
- * A WooCommerce review in litekart's Feedback shape (a superset: productId/reviewer/
+ * A WooCommerce review in the storefront's Feedback shape (a superset: productId/reviewer/
  * reviewerEmail/verified/avatar are additive). The v3 review payload is
  * id/date_created/product_id/status/reviewer/reviewer_email/review/rating/verified/
  * reviewer_avatar_urls — there is no WP user id, no merchant reply and no modified date, so
- * `userId` is '' (litekart types it `string`, so it must not be null), `response` is null and
+ * `userId` is '' (the contract types it `string`, so it must not be null), `response` is null and
  * `updatedAt` repeats the creation date rather than inventing values.
  */
 export type Feedback = {
@@ -64,7 +64,7 @@ export function mapWooReview(raw: any): Feedback {
 }
 
 /**
- * litekart's `-field` token -> WooCommerce review orderby/order pair.
+ * The storefront's `-field` token -> WooCommerce review orderby/order pair.
  * The orderby enum is date, date_gmt, id, slug, include, product (default date_gmt) —
  * there is NO orderby=rating, so sorting by stars has to happen client-side.
  */
@@ -76,7 +76,7 @@ function wooReviewSort(sort?: string): { orderby: string; order: 'asc' | 'desc' 
   return orderby ? { orderby, order } : { orderby: 'date_gmt', order: 'desc' }
 }
 
-/** ReviewService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** ReviewService — WooCommerce. Signatures mirror the storefront contract. */
 export class ReviewService extends BaseService {
   private static instance: ReviewService
   static getInstance(): ReviewService { if (!ReviewService.instance) ReviewService.instance = new ReviewService(); return ReviewService.instance }
@@ -106,7 +106,7 @@ export class ReviewService extends BaseService {
 
   /**
    * POST /products/reviews. WooCommerce requires product_id, reviewer, reviewer_email and
-   * review; `rating` (0-5) and `status` are optional. Fields litekart's Feedback carries
+   * review; `rating` (0-5) and `status` are optional. Fields the storefront's Feedback carries
    * that WooCommerce has no column for (userId, response) are not sent.
    */
   async saveReview(review: Partial<Omit<Feedback, 'id'>> & { productId: string; content: string }): Promise<Feedback> {

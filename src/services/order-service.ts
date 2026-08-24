@@ -2,7 +2,7 @@ import type { CartLineItem, Order, PaginatedResponse } from '../types'
 import { WooBaseService } from './cart-service'
 
 /**
- * OrderService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * OrderService — WooCommerce. Signatures mirror the storefront contract.
  *
  * Orders are the authenticated v3 surface:
  * https://woocommerce.github.io/woocommerce-rest-api-docs/#orders
@@ -20,7 +20,7 @@ const num = (v: unknown): number => {
 }
 
 /**
- * litekart sorts with a single '-field' string; WooCommerce always uses orderby + order.
+ * The storefront sorts with a single '-field' string; WooCommerce always uses orderby + order.
  *
  * The /orders orderby enum is EXACTLY date | id | include | title | slug. WordPress core
  * also accepts `modified`, but WooCommerce's CRUD controller narrows the enum, so
@@ -86,7 +86,7 @@ export class OrderService extends WooBaseService {
    * SECURITY: WooCommerce's ck/cs key identifies the APPLICATION, not a shopper, so an
    * unscoped GET /orders returns EVERY order in the store. A storefront must therefore
    * pass `customer` (the WooCommerce customer id); without it this behaves as the admin
-   * list. `customer` and `status` are optional additions to litekart's { page, q, sort }
+   * list. `customer` and `status` are optional additions to the storefront's { page, q, sort }
    * bag, so existing callers keep working unchanged.
    */
   async list({
@@ -136,7 +136,7 @@ export class OrderService extends WooBaseService {
     return mapOrder(match)
   }
 
-  /** Litekart just re-reads the order; WooCommerce has no "record a page hit" side effect. */
+  /** The storefront contract just re-reads the order; WooCommerce has no "record a page hit" side effect. */
   async paySuccessPageHit(orderId: string): Promise<Order> {
     return mapOrder(await this.get<any>(`/orders/${orderId}`))
   }
@@ -223,7 +223,7 @@ export class OrderService extends WooBaseService {
 
   /**
    * POST /products/reviews { product_id, review, reviewer, reviewer_email, rating }.
-   * WooCommerce requires reviewer + reviewer_email, which litekart's arg bag does not
+   * WooCommerce requires reviewer + reviewer_email, which the storefront's arg bag does not
    * carry, so they are read from optional extra keys when present.
    * `variantId` and `uploadedImages` are DROPPED: WooCommerce reviews attach to the
    * parent product only and have no image field.
@@ -240,7 +240,7 @@ export class OrderService extends WooBaseService {
     })
   }
 
-  // WooCommerce has no parent/child order split (litekart splits one order per vendor; Woo is single-vendor). The only child objects an order has are refunds: GET /orders/{id}/refunds.
+  // WooCommerce has no parent/child order split (the storefront contract splits one order per vendor; Woo is single-vendor). The only child objects an order has are refunds: GET /orders/{id}/refunds.
   async listOrdersByParent(_args: { orderNo: string | null; cartId: string | null }): Promise<any> {
     return this.emptyPage<Order>()
   }

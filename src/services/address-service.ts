@@ -2,9 +2,9 @@ import type { PaginatedResponse } from '../types'
 import { BaseService } from './base.service'
 
 /**
- * Address shape — structurally identical to litekart-connector's
- * `Address` (src/types/address-types.ts). Declared locally because the
- * WooCommerce connector's src/types/index.ts does not export one.
+ * Address shape — structurally identical to the storefront contract's `Address`.
+ * Declared locally because the WooCommerce connector's src/types/index.ts does
+ * not export one.
  */
 export type WooAddress = {
   id: string
@@ -39,14 +39,14 @@ export interface ListAddressesParams {
   user?: string
 }
 
-/** litekart: Omit<Address, 'id' | 'createdAt' | 'updatedAt' | 'active'>. `id` is accepted as an optional slot hint. */
+/** Contract: Omit<Address, 'id' | 'createdAt' | 'updatedAt' | 'active'>. `id` is accepted as an optional slot hint. */
 export type CreateAddressParams = Omit<WooAddress, 'id' | 'createdAt' | 'updatedAt' | 'active'> & { id?: string }
 export type UpdateAddressParams = Partial<Omit<WooAddress, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
 
 type Slot = 'billing' | 'shipping'
 
 /**
- * AddressService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * AddressService — WooCommerce. Signatures mirror the storefront contract.
  *
  * WooCommerce has NO address book. A customer record carries exactly ONE `billing`
  * object and ONE `shipping` object

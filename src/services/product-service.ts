@@ -4,7 +4,7 @@ import { mapProductGeneric } from '../mappers/generic.mapper'
 import { BaseService } from './base.service'
 
 /**
- * ProductService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * ProductService — WooCommerce. Signatures mirror the storefront contract.
  *
  * Everything here is the authenticated v3 namespace (/wp-json/wc/v3):
  *   GET /products                       https://woocommerce.github.io/woocommerce-rest-api-docs/#list-all-products
@@ -29,7 +29,7 @@ const toNum = (v: unknown): number => {
   return Number.isFinite(n) ? n : 0
 }
 
-/** WordPress post status -> litekart ProductStatus. */
+/** WordPress post status -> storefront ProductStatus. */
 const STATUS_MAP: Record<string, ProductStatus> = {
   publish: ProductStatus.PUBLISHED,
   draft: ProductStatus.DRAFT,
@@ -40,7 +40,7 @@ const STATUS_MAP: Record<string, ProductStatus> = {
 }
 
 /**
- * litekart sends sorting as a single `-field` token; WooCommerce always wants the pair
+ * The storefront sends sorting as a single `-field` token; WooCommerce always wants the pair
  * `orderby` + `order`. Allowed orderby values on /products are: date, modified, id,
  * include, title, slug, price, popularity, rating, menu_order (default date/desc).
  */
@@ -95,7 +95,7 @@ function mapVariantOptions(raw: any): { id: string; value: string }[] {
   return attrs.map((a) => ({ id: attrKey(a), value: String(a?.option ?? '') }))
 }
 
-/** Map a row of GET /products/{id}/variations into a litekart Variant. */
+/** Map a row of GET /products/{id}/variations into a storefront Variant. */
 export function mapWooVariant(raw: any, productId: string): Variant {
   const options = mapVariantOptions(raw)
   return {
@@ -111,7 +111,7 @@ export function mapWooVariant(raw: any, productId: string): Variant {
 }
 
 /**
- * Map a WooCommerce v3 product into the litekart Product shape.
+ * Map a WooCommerce v3 product into the storefront Product shape.
  *
  * mapProductGeneric() covers id/title/slug/price/mrp/description/image/stock; everything
  * below is data WooCommerce genuinely returns that the generic mapper hardcodes to null.
@@ -128,7 +128,7 @@ export function mapWooProduct(raw: any, opts: { storeId?: string } = {}): Produc
     active: raw?.status ? raw.status === 'publish' : base.active,
     status: STATUS_MAP[String(raw?.status)] ?? base.status,
     type: raw?.virtual || raw?.downloadable ? 'digital' : 'physical',
-    // A WooCommerce product can sit in several categories; litekart Product holds one.
+    // A WooCommerce product can sit in several categories; a storefront Product holds one.
     categoryId: raw?.categories?.[0]?.id != null ? String(raw.categories[0].id) : null,
     images: images.length ? JSON.stringify(images) : base.images,
     featuredImage: images[0] ?? base.featuredImage,
@@ -166,7 +166,7 @@ export function mapWooProduct(raw: any, opts: { storeId?: string } = {}): Produc
   }
 }
 
-/** ProductService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** ProductService — WooCommerce. Signatures mirror the storefront contract. */
 export class ProductService extends BaseService {
   private static instance: ProductService
   static getInstance(): ProductService { if (!ProductService.instance) ProductService.instance = new ProductService(); return ProductService.instance }
@@ -265,7 +265,7 @@ export class ProductService extends BaseService {
 
   /**
    * POST /products/reviews.
-   * WooCommerce requires `reviewer` and `reviewer_email` on top of litekart's arguments —
+   * WooCommerce requires `reviewer` and `reviewer_email` on top of the storefront's arguments —
    * they are accepted as optional extras here; without them WooCommerce replies
    * "Missing parameter(s): reviewer, reviewer_email" rather than this connector guessing.
    * `variantId` and `uploadedImages` have no home on a WooCommerce review (reviews are

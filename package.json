@@ -1,6 +1,6 @@
 {
   "name": "@misiki/woocommerce-connector",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "API Connector for WooCommerce with Svelte Commerce",
   "type": "module",
   "main": "./dist/index.cjs",

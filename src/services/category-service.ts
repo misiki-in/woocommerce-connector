@@ -3,7 +3,7 @@ import { BaseService } from './base.service'
 import { PRODUCT_PAGE_SIZE, WOO_MAX_PER_PAGE, mapWooProduct, wooProductSort } from './product-service'
 
 /**
- * CategoryService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * CategoryService — WooCommerce. Signatures mirror the storefront contract.
  *
  * Categories are WordPress terms of the `product_cat` taxonomy:
  *   GET /products/categories        https://woocommerce.github.io/woocommerce-rest-api-docs/#list-all-product-categories
@@ -11,10 +11,10 @@ import { PRODUCT_PAGE_SIZE, WOO_MAX_PER_PAGE, mapWooProduct, wooProductSort } fr
  *
  * Term sorting is `orderby` + `order`, where orderby is one of
  * id, include, name, slug, term_group, description, count (default name/asc).
- * There is no date column on a term, so litekart's `-createdAt` cannot be honoured.
+ * There is no date column on a term, so the storefront's `-createdAt` cannot be honoured.
  */
 
-/** litekart's `-field` sort token -> WooCommerce term orderby/order pair. */
+/** The storefront's `-field` sort token -> WooCommerce term orderby/order pair. */
 function wooTermSort(sort?: string): { orderby: string; order: 'asc' | 'desc' } {
   const raw = (sort || '').trim()
   const order: 'asc' | 'desc' = raw.startsWith('-') ? 'desc' : 'asc'
@@ -28,7 +28,7 @@ function wooTermSort(sort?: string): { orderby: string; order: 'asc' | 'desc' } 
 }
 
 /**
- * Map a product_cat term into the litekart Category shape.
+ * Map a product_cat term into the storefront Category shape.
  * (mapCategoryGeneric() is not used here: it hardcodes parentId/description/image to null
  * and WooCommerce returns all three.)
  */
@@ -44,7 +44,7 @@ export function mapWooCategory(raw: any): Category {
   }
 }
 
-/** CategoryService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** CategoryService — WooCommerce. Signatures mirror the storefront contract. */
 export class CategoryService extends BaseService {
   private static instance: CategoryService
   static getInstance(): CategoryService { if (!CategoryService.instance) CategoryService.instance = new CategoryService(); return CategoryService.instance }
@@ -98,7 +98,7 @@ export class CategoryService extends BaseService {
 
   /**
    * Numeric id -> GET /products/categories/{id}; slug -> GET /products/categories?slug=
-   * and take [0]. litekart calls this with a handle/slug, and v3 has no
+   * and take [0]. The storefront calls this with a handle/slug, and v3 has no
    * /products/categories/{slug} route (only the Store API accepts slugs in a path).
    */
   async fetchCategory(id: string): Promise<Category> {
@@ -112,7 +112,7 @@ export class CategoryService extends BaseService {
   /**
    * GET /products?category={termId}. On v3 `category` takes the numeric TERM id, so a
    * slug is resolved through /products/categories?slug= first.
-   * (`page` is an additive extra: litekart's signature is (id) only.)
+   * (`page` is an additive extra: the contract signature is (id) only.)
    */
   async fetchAllProductsOfCategories(id: string, { page = 1, sort = '-createdAt' }: { page?: number; sort?: string } = {}): Promise<PaginatedResponse<Product>> {
     const empty = { data: [] as Product[], count: 0, pageSize: PRODUCT_PAGE_SIZE, noOfPage: 0, page }

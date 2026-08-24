@@ -1,6 +1,6 @@
 import { BaseService } from './base.service'
 
-/** Setting, mirrored from @misiki/litekart-connector's `Setting` (src/types/store-types.ts). */
+/** Setting, mirrored from the storefront contract's `Setting`. */
 export type Setting = {
   id: string
   name: string
@@ -57,7 +57,7 @@ const PRODUCTS_FROM_SETTING: Record<string, string> = {
   dimensionUnit: 'woocommerce_dimension_unit'
 }
 
-/** SettingService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** SettingService — WooCommerce. Signatures mirror the storefront contract. */
 export class SettingService extends BaseService {
   private static instance: SettingService
   static getInstance(): SettingService { if (!SettingService.instance) SettingService.instance = new SettingService(); return SettingService.instance }
@@ -68,7 +68,7 @@ export class SettingService extends BaseService {
    *
    * WooCommerce has no single "store settings" record; the options are spread across groups.
    * We read `general` (address/currency) and `products` (units) and fold them into one
-   * litekart Setting. Returned as a one-element array to match litekart's `Setting[]` —
+   * storefront Setting. Returned as a one-element array to match the storefront's `Setting[]` —
    * one WooCommerce install is exactly one store, so there is never more than one.
    * Requires a ck/cs key with at least read scope on settings.
    */
@@ -82,9 +82,9 @@ export class SettingService extends BaseService {
 
   /**
    * v3 POST /settings/{group_id}/batch { update: [{ id, value }] } — "Batch update setting options".
-   * WooCommerce settings are a FIXED set of options: there is no create, so litekart's "save"
+   * WooCommerce settings are a FIXED set of options: there is no create, so the storefront's "save"
    * is mapped onto a batch update of the options it actually carries. Options are routed to
-   * the group that owns them (never assumed to be `general`); unmapped litekart fields
+   * the group that owns them (never assumed to be `general`); unmapped contract fields
    * (name, logo, description, phone, email, commission, providers) have no WooCommerce v3
    * option and are ignored rather than written to a guessed key.
    */

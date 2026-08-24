@@ -1,6 +1,6 @@
 import { BaseService } from './base.service'
 
-/** State, mirrored from @misiki/litekart-connector's `State` (src/types/region-types.ts). */
+/** State, mirrored from the storefront contract's `State`. */
 export type State = {
   name: string
   code: string
@@ -15,14 +15,14 @@ function optionMap(raw: WooSettingOption[] | undefined): Record<string, unknown>
   return out
 }
 
-/** StateService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** StateService — WooCommerce. Signatures mirror the storefront contract. */
 export class StateService extends BaseService {
   private static instance: StateService
   static getInstance(): StateService { if (!StateService.instance) StateService.instance = new StateService(); return StateService.instance }
 
   /**
    * There is NO standalone /data/states route in WooCommerce — states are nested inside the
-   * country payload. litekart's list() takes no arguments, so we resolve the store's own base
+   * country payload. The contract's list() takes no arguments, so we resolve the store's own base
    * country first and return its states, which is what an address form on a single-store
    * WooCommerce install needs.
    *

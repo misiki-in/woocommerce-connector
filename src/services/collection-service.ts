@@ -3,7 +3,7 @@ import { BaseService } from './base.service'
 import { PRODUCT_PAGE_SIZE, mapWooProduct } from './product-service'
 
 /**
- * CollectionService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * CollectionService — WooCommerce. Signatures mirror the storefront contract.
  *
  * APPROXIMATION: WooCommerce has no "collection" object. The closest merchandising
  * grouping it ships with is the product TAG taxonomy (categories are already owned by
@@ -16,7 +16,7 @@ import { PRODUCT_PAGE_SIZE, mapWooProduct } from './product-service'
 /**
  * A WooCommerce product tag presented as a collection.
  *
- * The field list is litekart's `Collection` verbatim, so kitcommerce-core keeps compiling:
+ * The field list is the storefront's `Collection` verbatim, so kitcommerce-core keeps compiling:
  * dropping fields would be a breaking narrowing of the contract this connector exists to
  * satisfy. A product_tag term only carries id/name/slug/description/count, so the fields it
  * has no column for get the same neutral values the rest of this connector uses for unknowns
@@ -61,7 +61,7 @@ export function mapWooTag(raw: any): Collection {
   }
 }
 
-/** litekart's `-field` sort token -> WooCommerce term orderby/order pair (terms have no date column). */
+/** The storefront's `-field` sort token -> WooCommerce term orderby/order pair (terms have no date column). */
 function wooTagSort(sort?: string): { orderby: string; order: 'asc' | 'desc' } {
   const raw = (sort || '').trim()
   const order: 'asc' | 'desc' = raw.startsWith('-') ? 'desc' : 'asc'
@@ -93,7 +93,7 @@ export class CollectionService extends BaseService {
 
   /**
    * Products carrying a tag: GET /products?tag={termId}.
-   * Additive helper — litekart has no equivalent, but `list()`/`getOne()` are useless
+   * Additive helper — the contract has no equivalent, but `list()`/`getOne()` are useless
    * without a way to read the tag's products, and this is the documented route.
    */
   async listProducts(id: string, { page = 1 }: { page?: number } = {}): Promise<PaginatedResponse<Product>> {

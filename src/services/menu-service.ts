@@ -1,6 +1,6 @@
 import { BaseService } from './base.service'
 
-/** Menu, mirrored from @misiki/litekart-connector's `Menu` (src/types/menu-types.ts). */
+/** Menu, mirrored from the storefront contract's `Menu`. */
 export type Menu = {
   id: string
   active: boolean
@@ -17,8 +17,7 @@ export type Menu = {
 type WooTerm = { id?: number; name?: string; slug?: string; parent?: number; count?: number; menu_order?: number }
 
 /**
- * MenuService — WooCommerce. Signatures mirror @misiki/litekart-connector.
- * (File is menu-service.ts here; litekart calls it menu-services.ts.)
+ * MenuService — WooCommerce. Signatures mirror the storefront contract.
  */
 export class MenuService extends BaseService {
   private static instance: MenuService

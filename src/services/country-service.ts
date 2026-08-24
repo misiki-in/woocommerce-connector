@@ -1,7 +1,7 @@
 import { BaseService } from './base.service'
 
 /**
- * Country, mirrored from @misiki/litekart-connector's `Country` (src/types/region-types.ts).
+ * Country, mirrored from the storefront contract's `Country`.
  * `states` is additive: WooCommerce ships them nested inside the same payload, so exposing
  * them here saves callers a second round trip.
  */
@@ -21,7 +21,7 @@ function mapCountry(raw: WooCountry): Country {
   }
 }
 
-/** CountryService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** CountryService — WooCommerce. Signatures mirror the storefront contract. */
 export class CountryService extends BaseService {
   private static instance: CountryService
   static getInstance(): CountryService { if (!CountryService.instance) CountryService.instance = new CountryService(); return CountryService.instance }
@@ -40,7 +40,7 @@ export class CountryService extends BaseService {
 
   /**
    * v3 GET /data/countries/{code} — single country, e.g. /data/countries/IN.
-   * Additive helper (litekart has no equivalent); used by StateService.
+   * Additive helper (the contract has no equivalent); used by StateService.
    */
   async getOne(code: string): Promise<Country> {
     return mapCountry(await this.get<WooCountry>(`/data/countries/${encodeURIComponent(String(code).toUpperCase())}`))

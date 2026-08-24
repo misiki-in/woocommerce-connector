@@ -2,7 +2,7 @@ import type { PaginatedResponse } from '../types'
 import { WooBaseService } from './cart-service'
 
 /**
- * CouponService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * CouponService — WooCommerce. Signatures mirror the storefront contract.
  *
  * Admin CRUD over v3 /coupons:
  * https://woocommerce.github.io/woocommerce-rest-api-docs/#coupons
@@ -12,14 +12,14 @@ import { WooBaseService } from './cart-service'
  * storefront is Store API POST /cart/apply-coupon (see cartService.applyCoupon).
  */
 
-/** litekart's Coupon shape, with the WooCommerce-native fields that have no litekart home appended. */
+/** The storefront's Coupon shape, with the WooCommerce-native fields that have no home in the contract appended. */
 export type Coupon = {
   id: string
   code: string
   amount: number
   /**
    * WooCommerce discount_type: 'percent' | 'fixed_cart' | 'fixed_product'.
-   * litekart's USER/TOTAL/BOGO taxonomy has no WooCommerce equivalent, so the native
+   * The storefront's USER/TOTAL/BOGO taxonomy has no WooCommerce equivalent, so the native
    * value is passed through rather than forced into it.
    */
   type: string
@@ -42,7 +42,7 @@ const num = (v: unknown): number => {
 }
 
 /**
- * litekart sorts with a single '-field' string; WooCommerce always uses the pair
+ * The storefront sorts with a single '-field' string; WooCommerce always uses the pair
  * orderby + order. The coupon code IS the post title, so 'code' maps to orderby=title.
  *
  * The /coupons orderby enum is EXACTLY date | id | include | title | slug — WooCommerce
@@ -89,7 +89,7 @@ export function mapCoupon(raw: any): Coupon {
   }
 }
 
-/** Translate a litekart-shaped coupon into a WooCommerce coupon body. */
+/** Translate a contract-shaped coupon into a WooCommerce coupon body. */
 function toWooCoupon(input: Record<string, any>): Record<string, unknown> {
   const body: Record<string, unknown> = {}
   if (input.code !== undefined) body.code = input.code

@@ -3,7 +3,7 @@ import { getPath } from '../mappers/generic.mapper'
 import { BaseService, WP_API_BASE } from './base.service'
 
 /**
- * Content page, mirrored from @misiki/litekart-connector's `Page` (src/types/content-types.ts).
+ * Content page, mirrored from the storefront contract's `Page`.
  * Declared locally because the WooCommerce connector's src/types/index.ts only carries the
  * commerce types (Product, Category, Order, ...).
  */
@@ -28,7 +28,7 @@ export type Page = {
 /**
  * WordPress `orderby` values accepted by GET /wp/v2/pages.
  * https://developer.wordpress.org/rest-api/reference/pages/#list-pages
- * Litekart passes a single signed field ('-createdAt'); WP wants the pair orderby + order.
+ * The storefront passes a single signed field ('-createdAt'); WP wants the pair orderby + order.
  */
 const PAGE_ORDERBY: Record<string, string> = {
   createdat: 'date', date: 'date',
@@ -79,7 +79,7 @@ function mapPage(raw: any): Page {
   }
 }
 
-/** PageService — WooCommerce/WordPress. Signatures mirror @misiki/litekart-connector. */
+/** PageService — WooCommerce/WordPress. Signatures mirror the storefront contract. */
 export class PageService extends BaseService {
   private static instance: PageService
   static getInstance(): PageService { if (!PageService.instance) PageService.instance = new PageService(); return PageService.instance }
@@ -98,7 +98,7 @@ export class PageService extends BaseService {
 
   /**
    * wp GET /wp/v2/pages?orderby=modified&order=desc&per_page=10 — most recently updated pages.
-   * litekart's listLatestPages sorts by `-updatedAt`, which is WP's `modified`, not `date`.
+   * The storefront's listLatestPages sorts by `-updatedAt`, which is WP's `modified`, not `date`.
    * Totals come from the X-WP-Total / X-WP-TotalPages headers via getPaged(), not from the
    * length of the slice we asked for.
    */

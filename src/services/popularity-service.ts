@@ -1,7 +1,7 @@
 import { BaseService } from './base.service'
 
 /**
- * PopularityService — WooCommerce. Signatures mirror @misiki/litekart-connector
+ * PopularityService — WooCommerce. Signatures mirror the storefront contract
  * (whose own updatePopularity is a no-op too).
  *
  * NOT SUPPORTED: popularity in WooCommerce is `total_sales` (plus `average_rating` /

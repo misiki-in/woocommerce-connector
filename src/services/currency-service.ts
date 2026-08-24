@@ -2,7 +2,7 @@ import type { PaginatedResponse } from '../types'
 import { BaseService } from './base.service'
 
 /**
- * Currency, mirrored from @misiki/litekart-connector's `Currency` (src/types/region-types.ts).
+ * Currency, mirrored from the storefront contract's `Currency`.
  * `code`/`symbol` are additive — WooCommerce returns them in the same payload.
  */
 export type Currency = {
@@ -23,7 +23,7 @@ function mapCurrency(raw: WooCurrency): Currency {
   }
 }
 
-/** CurrencyService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** CurrencyService — WooCommerce. Signatures mirror the storefront contract. */
 export class CurrencyService extends BaseService {
   private static instance: CurrencyService
   static getInstance(): CurrencyService { if (!CurrencyService.instance) CurrencyService.instance = new CurrencyService(); return CurrencyService.instance }
@@ -46,7 +46,7 @@ export class CurrencyService extends BaseService {
 
   /**
    * v3 GET /data/currencies/current — the store's active currency.
-   * Additive helper (litekart has no equivalent); used by InitService/SettingService.
+   * Additive helper (the contract has no equivalent); used by InitService/SettingService.
    */
   async getCurrentCurrency(): Promise<Currency> {
     return mapCurrency(await this.get<WooCurrency>('/data/currencies/current'))

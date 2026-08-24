@@ -3,9 +3,9 @@ import { BaseService } from './base.service'
 import { MeilisearchService } from './meilisearch-service'
 
 /**
- * SearchService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * SearchService — WooCommerce. Signatures mirror the storefront contract.
  *
- * Same layering as litekart: this service parses the storefront URL and delegates the
+ * Same layering as the storefront contract: this service parses the storefront URL and delegates the
  * actual query to MeilisearchService — which, in this connector, is a WooCommerce-native
  * fallback over v3 GET /products (see meilisearch-service.ts for exactly what that costs).
  * URL parameter translation:
@@ -16,7 +16,7 @@ import { MeilisearchService } from './meilisearch-service'
  * /products/collection-data.
  */
 
-/** Structured search results — mirrors @misiki/litekart-connector's ProductSearchResult. */
+/** Structured search results — mirrors the storefront contract's ProductSearchResult. */
 export interface ProductSearchResult {
   data: Product[]
   count: number
@@ -30,7 +30,7 @@ export interface ProductSearchResult {
   }
 }
 
-/** SearchService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** SearchService — WooCommerce. Signatures mirror the storefront contract. */
 export class SearchService extends BaseService {
   private static instance: SearchService
   private meilisearchService: MeilisearchService
@@ -52,7 +52,7 @@ export class SearchService extends BaseService {
       facets: {
         // Price comes from the Store API collection-data call. WooCommerce v3 returns no
         // category/tag facet counts, so `facetDistribution` is undefined today and both lists
-        // come out empty — but the mapping is litekart's, verbatim, rather than a hardcoded
+        // come out empty — but the mapping is the storefront's, verbatim, rather than a hardcoded
         // `[]`, so wiring facetDistribution up later needs no change here.
         priceStat: {
           min: res?.allfacetStats?.price?.min,
@@ -67,7 +67,7 @@ export class SearchService extends BaseService {
 
   /**
    * Search from a storefront URL. `slug` (a category handle) overrides ?categories=.
-   * Mirrors litekart's parameter parsing, including its swallow-and-return-empty contract.
+   * Mirrors the storefront's parameter parsing, including its swallow-and-return-empty contract.
    */
   async searchWithUrl(url: URL, slug?: string): Promise<ProductSearchResult> {
     try {
@@ -121,7 +121,7 @@ export class SearchService extends BaseService {
     }
   }
 
-  /** Empty result used as the failure fallback (additive: litekart has no such method). */
+  /** Empty result used as the failure fallback (additive: the contract has no such method). */
   emptyResult(): ProductSearchResult {
     return {
       data: [],

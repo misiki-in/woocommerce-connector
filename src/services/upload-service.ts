@@ -1,5 +1,5 @@
 import { BaseService } from './base.service'
-/** UploadService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
+/** UploadService — present-but-dummy (mirrors the storefront contract); returns dummy data, never throws. */
 export class UploadService extends BaseService {
   private static instance: UploadService
   static getInstance(): UploadService { if (!UploadService.instance) UploadService.instance = new UploadService(); return UploadService.instance }

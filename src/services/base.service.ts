@@ -1,3 +1,4 @@
+import { isRestPath, resolveRestLocally } from './rest-guard'
 import type { Credentials } from '../config'
 
 /**
@@ -49,6 +50,10 @@ export class BaseService {
   }
 
   protected async request<T = any>(path: string, init: RequestInit = {}, _retried = false, base: string = API_BASE): Promise<T> {
+    // Storefront REST paths this connector inherits — `/api/menu`, `/api/pages/*`,
+    // `/api/ms-autocomplete/*` and the rest — have no WooCommerce equivalent, and there is no such
+    // API behind this store to answer them. See rest-guard.ts.
+    if (isRestPath(path)) return (await resolveRestLocally(String(init?.method ?? 'GET').toLowerCase(), path)) as T
     let res: Response
     try {
       res = await this._fetch(this.url(path, base), {

@@ -2,13 +2,13 @@ import type { Cart, CartLineItem } from '../types'
 import { BaseService, STORE_API_BASE } from './base.service'
 
 /**
- * CartService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * CartService â WooCommerce. Signatures mirror the storefront contract.
  *
  * WooCommerce v3 has NO cart endpoints at all; every cart operation lives on the
  * public Store API (/wp-json/wc/store/v1). Docs:
  * https://developer.woocommerce.com/docs/apis/store-api/resources-endpoints/cart/
  *
- * SESSION HANDLING — read this before debugging a 403:
+ * SESSION HANDLING â read this before debugging a 403:
  * Store API carts are session scoped and are NOT addressable by id. The only headless
  * way to keep (or target) a cart is the `Cart-Token` JWT, and every write additionally
  * needs a `Nonce`. Both are returned as RESPONSE headers that the client must capture
@@ -26,7 +26,7 @@ export const storeSession: { cartToken: string | null; nonce: string | null } = 
 
 const CART_ID_KEY = 'cart_id'
 
-/** localStorage is not available during SSR — read/write defensively. */
+/** localStorage is not available during SSR â read/write defensively. */
 function readStoredCartId(): string | null {
   try {
     return typeof localStorage === 'undefined' ? null : localStorage.getItem(CART_ID_KEY)
@@ -64,7 +64,7 @@ export class WooBaseService extends BaseService {
   /**
    * Issue a Store API request, replaying the captured `Cart-Token`/`Nonce` headers and
    * re-capturing them from the response. `cartToken` overrides the cached token so a
-   * caller that persisted a cart id (litekart passes `cartId` everywhere) can target it.
+   * caller that persisted a cart id (the storefront passes `cartId` everywhere) can target it.
    */
   protected async storeRequest<T = any>(
     path: string,
@@ -124,7 +124,7 @@ export function mapStoreCart(raw: any, opts: { storeId?: string; cartId?: string
     const itemUnit = it?.prices?.currency_minor_unit ?? unit
     const isVariation = Array.isArray(it?.variation) && it.variation.length > 0
     return {
-      // `key` is WooCommerce's cart-item hash — it is what remove-item/update-item expect.
+      // `key` is WooCommerce's cart-item hash â it is what remove-item/update-item expect.
       id: String(it?.key ?? ''),
       productId: String(it?.id ?? ''),
       variantId: isVariation ? String(it?.id ?? '') : '',
@@ -151,7 +151,7 @@ export function mapStoreCart(raw: any, opts: { storeId?: string; cartId?: string
   const shippingCountry = raw?.shipping_address?.country
 
   return {
-    // Store API carts have no id of their own — the Cart-Token IS the handle.
+    // Store API carts have no id of their own â the Cart-Token IS the handle.
     id: String(opts.cartId ?? storeSession.cartToken ?? ''),
     email: raw?.billing_address?.email || null,
     phone: raw?.billing_address?.phone || null,
@@ -195,7 +195,7 @@ export class CartService extends WooBaseService {
     return mapStoreCart(raw, { storeId: this.creds.storeId, cartId: this.resolveCartToken(cartId) })
   }
 
-  /** GET store /cart — the session's cart, items, totals, shipping rates and coupons. */
+  /** GET store /cart â the session's cart, items, totals, shipping rates and coupons. */
   async fetchCartData(): Promise<Cart> {
     const raw = await this.storeRequest<any>('/cart', {
       method: 'GET',
@@ -210,7 +210,7 @@ export class CartService extends WooBaseService {
   }
 
   /**
-   * There is no /cart/{id} path — carts are session scoped. The only way to target a
+   * There is no /cart/{id} path â carts are session scoped. The only way to target a
    * specific cart headlessly is to send its JWT as the `Cart-Token` request header,
    * so `cartId` is treated as that token.
    * https://developer.woocommerce.com/docs/apis/store-api/cart-tokens/
@@ -221,9 +221,9 @@ export class CartService extends WooBaseService {
   }
 
   /**
-   * Add a line, update it when `lineId` is supplied, or remove it on litekart's
+   * Add a line, update it when `lineId` is supplied, or remove it on the storefront's
    * -9999999 sentinel quantity.
-   * POST /cart/add-item { id, quantity, variation } — for a variable product `id` must
+   * POST /cart/add-item { id, quantity, variation } â for a variable product `id` must
    * be the VARIATION id, not the parent.
    */
   async addToCart({
@@ -242,7 +242,7 @@ export class CartService extends WooBaseService {
     const token = this.resolveCartToken(cartId)
 
     if (qty === -9999999) {
-      // litekart's "remove this line" sentinel.
+      // The storefront's "remove this line" sentinel.
       return this.removeCart({ cartId: token as string, lineId })
     }
 
@@ -263,7 +263,7 @@ export class CartService extends WooBaseService {
     }
 
     // /cart/add-item and /cart/update-item both return the full cart, but the REST-style
-    // aliases (/cart/items) return only the item — re-read when the shape is not a cart.
+    // aliases (/cart/items) return only the item â re-read when the shape is not a cart.
     if (!raw || !Array.isArray(raw.items) || !raw.totals) {
       raw = await this.storeRequest('/cart', { method: 'GET', cartToken: this.resolveCartToken(cartId) })
     }
@@ -271,10 +271,10 @@ export class CartService extends WooBaseService {
   }
 
   /**
-   * POST /cart/remove-item { key } — `key` is the cart-item hash (items[].key), NOT a
+   * POST /cart/remove-item { key } â `key` is the cart-item hash (items[].key), NOT a
    * numeric line id.
    *
-   * With NO lineId this is a no-op that just re-reads the cart, matching litekart, whose
+   * With NO lineId this is a no-op that just re-reads the cart, matching the storefront contract, whose
    * removeCart() only issues a DELETE when `lineId` is set. Do NOT "helpfully" fall back
    * to DELETE /cart/items here: that route exists and empties the entire cart, so every
    * caller that passes `lineId: null` (the parameter default) would silently lose the
@@ -295,7 +295,7 @@ export class CartService extends WooBaseService {
   }
 
   /**
-   * POST /cart/apply-coupon { code }. This — not v3 /coupons — is the shopper-facing
+   * POST /cart/apply-coupon { code }. This â not v3 /coupons â is the shopper-facing
    * validator: it checks usage limits and minimum spend against THIS cart and throws
    * woocommerce_rest_cart_coupon_error with a human message when the code is invalid.
    */
@@ -309,7 +309,7 @@ export class CartService extends WooBaseService {
   }
 
   /**
-   * POST /cart/remove-coupon { code } — `code` is REQUIRED but litekart's signature
+   * POST /cart/remove-coupon { code } â `code` is REQUIRED but the storefront's signature
    * takes no argument, so the applied codes are read from GET /cart first and removed
    * one by one.
    */
@@ -332,7 +332,7 @@ export class CartService extends WooBaseService {
   /**
    * Persist customer/billing/shipping details on the cart and re-run shipping + tax.
    * POST /cart/update-customer { billing_address, shipping_address } using WooCommerce
-   * field names — litekart's zip -> postcode and countryCode -> country. `landmark` has
+   * field names â the storefront's zip -> postcode and countryCode -> country. `landmark` has
    * no WooCommerce home, so it is folded into address_2.
    */
   async updateCart2({

@@ -1,6 +1,7 @@
 import { BaseService } from './base.service'
+import { readStaticStore } from './static-store'
 
-/** Store details, mirrored from @misiki/litekart-connector's StoreService. */
+/** Store details, mirrored from the storefront contract's StoreService. */
 export interface StoreDetails {
   id: string
   name: string
@@ -53,7 +54,7 @@ function hostOf(url: string): string {
   try { return new URL(url).host } catch { return '' }
 }
 
-/** StoreService — WooCommerce. Signatures mirror @misiki/litekart-connector. */
+/** StoreService — WooCommerce. Signatures mirror the storefront contract. */
 export class StoreService extends BaseService {
   private static instance: StoreService
   static getInstance(): StoreService { if (!StoreService.instance) StoreService.instance = new StoreService(); return StoreService.instance }
@@ -61,7 +62,7 @@ export class StoreService extends BaseService {
   /**
    * One WooCommerce install is exactly ONE store and creds.apiUrl already identifies it, so
    * there is no store-directory endpoint to look `storeId` / `domain` up in. Both arguments
-   * are therefore only validated (litekart's "Either storeId or domain must be provided"
+   * are therefore only validated (the storefront's "Either storeId or domain must be provided"
    * contract is kept) and then ignored; the store described is always creds.apiUrl's.
    *
    * Composed from:
@@ -74,6 +75,11 @@ export class StoreService extends BaseService {
    *     a site that blocks the index still yields a store from the settings above.
    */
   async getStoreByIdOrDomain({ storeId, domain }: GetStoreParams): Promise<StoreDetails> {
+    // WooCommerce has no store record of its own; when the storefront has registered one,
+    // that is the authoritative answer and no HTTP call is made.
+    const staticStore = await readStaticStore()
+    if (staticStore) return staticStore as unknown as StoreDetails
+
     if (!storeId && !domain) {
       throw new Error('Either storeId or domain must be provided')
     }

@@ -4,7 +4,7 @@ import { AuthService } from './auth-service'
 import { BaseService } from './base.service'
 
 /**
- * WooCommerce customer -> litekart User.
+ * WooCommerce customer -> storefront User.
  * docs: https://woocommerce.github.io/woocommerce-rest-api-docs/#customer-properties
  */
 function toUser(c: any): User {
@@ -34,7 +34,7 @@ function toUser(c: any): User {
 }
 
 /**
- * ProfileService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * ProfileService — WooCommerce. Signatures mirror the storefront contract.
  *
  * WooCommerce v3 has no "current customer" route: a ck/cs consumer key identifies the
  * application, not a shopper. Everything here therefore needs an explicit customer id.
@@ -57,7 +57,7 @@ export class ProfileService extends BaseService {
    * Updates a customer via PUT /wp-json/wc/v3/customers/{id}
    * (docs: https://woocommerce.github.io/woocommerce-rest-api-docs/#update-a-customer).
    *
-   * litekart types the argument as Omit<User, 'id'>; WooCommerce cannot resolve "me", so the
+   * The storefront contract types the argument as Omit<User, 'id'>; WooCommerce cannot resolve "me", so the
    * id must be supplied on the object. Without it we throw instead of guessing a customer
    * (resolving by email would let any caller overwrite any account).
    */

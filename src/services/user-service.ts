@@ -3,7 +3,7 @@ import { AuthService } from './auth-service'
 import { BaseService } from './base.service'
 
 /**
- * UserService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * UserService — WooCommerce. Signatures mirror the storefront contract.
  *
  * Every auth-flow method delegates to AuthService so there is a single place where the
  * "WooCommerce v3 has no shopper session" reality is enforced (no login, no logout, no

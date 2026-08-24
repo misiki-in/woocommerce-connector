@@ -1,5 +1,5 @@
 import { BaseService } from './base.service'
-/** DealService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
+/** DealService — present-but-dummy (mirrors the storefront contract); returns dummy data, never throws. */
 export class DealService extends BaseService {
   private static instance: DealService
   static getInstance(): DealService { if (!DealService.instance) DealService.instance = new DealService(); return DealService.instance }

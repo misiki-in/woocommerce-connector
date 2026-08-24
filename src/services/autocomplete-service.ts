@@ -3,7 +3,7 @@ import { BaseService } from './base.service'
 import { wooProductSort } from './product-service'
 
 /**
- * AutocompleteService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * AutocompleteService — WooCommerce. Signatures mirror the storefront contract.
  *
  * WooCommerce ships no suggest/typeahead resource, so the closest real endpoint is a small
  * product search: GET /products?search=&per_page=10
@@ -13,7 +13,7 @@ import { wooProductSort } from './product-service'
  * v3 params and both are ignored harmlessly by older WooCommerce versions.
  */
 
-/** Suggestion row — mirrors @misiki/litekart-connector's AutoComplete (`slug`/`link` are additive). */
+/** Suggestion row — mirrors the storefront contract's AutoComplete (`slug`/`link` are additive). */
 export type AutoComplete = {
   id: string
   text: string

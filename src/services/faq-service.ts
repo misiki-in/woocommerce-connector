@@ -1,5 +1,5 @@
 import { BaseService } from './base.service'
-/** FaqService — present-but-dummy (mirrors litekart-connector); returns dummy data, never throws. */
+/** FaqService — present-but-dummy (mirrors the storefront contract); returns dummy data, never throws. */
 export class FaqService extends BaseService {
   private static instance: FaqService
   static getInstance(): FaqService { if (!FaqService.instance) FaqService.instance = new FaqService(); return FaqService.instance }

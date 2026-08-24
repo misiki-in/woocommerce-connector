@@ -2,7 +2,7 @@ import { NotSupportedError } from '../errors'
 import { WooBaseService, minor } from './cart-service'
 
 /**
- * CheckoutService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * CheckoutService — WooCommerce. Signatures mirror the storefront contract.
  *
  * Placing an order is the Store API checkout endpoint:
  * POST /wp-json/wc/store/v1/checkout
@@ -104,7 +104,7 @@ export class CheckoutService extends WooBaseService {
    * Razorpay is a plugin gateway; core WooCommerce does not ship it. The gateway id is
    * resolved at runtime rather than hardcoded, then the standard POST /checkout runs.
    * The plugin's redirect URL comes back in payment_result.redirect_url. Note that
-   * `payment_data` cannot be supplied through litekart's signature — if the installed
+   * `payment_data` cannot be supplied through the storefront's signature — if the installed
    * plugin requires it, the checkout will fail with the plugin's own message.
    */
   async checkoutRazorpay({ cartId, origin }: { cartId: string; origin: string }): Promise<any> {
@@ -133,7 +133,7 @@ export class CheckoutService extends WooBaseService {
   /**
    * Stripe is a plugin gateway ('stripe' for WooCommerce Stripe Gateway, 'stripe_cc' for
    * Stripe by Payment Plugins). Its `payment_data` must carry the PaymentMethod token
-   * created client-side by Stripe.js, which litekart's { cartId, origin } signature has
+   * created client-side by Stripe.js, which the storefront's { cartId, origin } signature has
    * nowhere to put — so this will only succeed on stores whose Stripe plugin is
    * configured for a redirect/hosted flow.
    */
@@ -151,7 +151,7 @@ export class CheckoutService extends WooBaseService {
     return this.dummy({})
   }
 
-  // Cashfree is a third-party gateway plugin; no core REST route exists. (litekart keeps its Cashfree flow on order-service.)
+  // Cashfree is a third-party gateway plugin; no core REST route exists. (The storefront contract keeps its Cashfree flow on order-service.)
   async checkoutCashfree(..._args: any[]): Promise<any> {
     return this.dummy({})
   }

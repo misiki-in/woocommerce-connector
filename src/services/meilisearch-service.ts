@@ -9,7 +9,7 @@ import { PRODUCT_PAGE_SIZE, mapWooProduct, wooProductSort } from './product-serv
  * does not run, and there is no /ms/products route in any WooCommerce namespace. Nothing
  * here talks to Meilisearch. This is a DEGRADED, WooCommerce-native substitute built on
  *   GET /wc/v3/products   https://woocommerce.github.io/woocommerce-rest-api-docs/#list-all-products
- * so that callers written against the litekart connector keep working. What that costs:
+ * so that callers written against the storefront contract keep working. What that costs:
  *  - no relevance ranking and no `_matchesPosition` (WooCommerce search is a SQL LIKE);
  *  - no `facetDistribution`: v3 returns no facet counts at all. The one faceted surface
  *    WooCommerce has is the Store API's /products/collection-data, which is used below for
@@ -18,7 +18,7 @@ import { PRODUCT_PAGE_SIZE, mapWooProduct, wooProductSort } from './product-serv
  * Anything this file cannot fill honestly is left undefined rather than faked.
  */
 
-/** Search parameters — mirrors @misiki/litekart-connector's MsSearchParams. */
+/** Search parameters — mirrors the storefront contract's MsSearchParams. */
 export interface MsSearchParams {
   query: string
   categories?: string
@@ -33,7 +33,7 @@ export interface MsSearchParams {
   optionParams?: Record<string, string>
 }
 
-/** Response envelope — mirrors @misiki/litekart-connector's MeilisearchResponse. */
+/** Response envelope — mirrors the storefront contract's MeilisearchResponse. */
 export type MeilisearchResponse = {
   hits: Product[]
   totalHits?: number
@@ -51,7 +51,7 @@ export type MeilisearchResponse = {
   categories: Record<string, unknown>[]
 }
 
-/** Meilisearch-style `field:asc` / litekart-style `-field` -> WooCommerce orderby+order. */
+/** Meilisearch-style `field:asc` / storefront-style `-field` -> WooCommerce orderby+order. */
 function normaliseSort(sort?: string): { orderby: string; order: 'asc' | 'desc' } {
   if (sort && sort.includes(':')) {
     const [field, dir] = sort.split(':')
@@ -111,7 +111,7 @@ export class MeilisearchService extends BaseService {
     // silently mis-filtering, these parameter groups are ignored here.
     void originCountry; void otherParams; void attributeParams; void optionParams
 
-    // WooCommerce has a single free-text `search`; litekart's separate keyword bag is folded in.
+    // WooCommerce has a single free-text `search`; the contract's separate keyword bag is folded in.
     const search = [query, keywords].filter(Boolean).join(' ').trim()
     const [minPrice = '', maxPrice = ''] = (price || '').split(',')
     const { orderby, order } = normaliseSort(sort)

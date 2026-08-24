@@ -1,7 +1,7 @@
 import type { PaginatedResponse } from '../types'
 import { BaseService } from './base.service'
 
-/** Banner, mirrored from @misiki/litekart-connector's `Banner` (src/types/content-types.ts). */
+/** Banner, mirrored from the storefront contract's `Banner`. */
 export type Banner = {
   id: string
   active: boolean

@@ -16,7 +16,7 @@ export type FieldMap = {
   currency?: string; description?: string; image?: string; images?: string; stock?: string
 }
 
-/** Map an arbitrary vendor product object into a litekart Product via a field map. */
+/** Map an arbitrary vendor product object into a storefront Product via a field map. */
 export function mapProductGeneric(raw: any, fm: FieldMap, opts: { storeId?: string } = {}): Product {
   const img = fm.image ? getPath(raw, fm.image) : undefined
   const price = num(getPath(raw, fm.price || 'price'))

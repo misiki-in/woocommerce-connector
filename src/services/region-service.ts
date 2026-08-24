@@ -1,6 +1,6 @@
 import { BaseService } from './base.service'
 
-/** Region, mirrored from @misiki/litekart-connector's `Region` (src/types/region-types.ts). */
+/** Region, mirrored from the storefront contract's `Region`. */
 export type Region = {
   id: string
   name: string
@@ -23,7 +23,7 @@ function optionMap(raw: WooSettingOption[] | undefined): Record<string, unknown>
 }
 
 /**
- * RegionService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * RegionService — WooCommerce. Signatures mirror the storefront contract.
  *
  * WooCommerce has no Medusa-style "region" (currency + countries + tax + payment providers
  * bundled together). Currency and base country are store-wide settings, and the only
@@ -39,7 +39,7 @@ export class RegionService extends BaseService {
    *   v3 GET /shipping/zones/{id}/locations  (entries of type country/state/postcode/continent)
    *   v3 GET /shipping/zones/{id}/methods
    * Anything else -> the store-wide "region" built from v3 GET /settings/general, which is
-   * what litekart's own implementation returns (it calls /api/settings and ignores the id).
+   * what the storefront's own implementation returns (it calls /api/settings and ignores the id).
    * We never send a non-numeric id to /shipping/zones/{id}: that route only matches digits
    * and would 404 in a customer's store.
    *

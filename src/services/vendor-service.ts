@@ -5,9 +5,9 @@ import { BaseService } from './base.service'
 const FIELDS = { id: 'id', title: 'name', slug: 'slug', price: 'price', mrp: 'regular_price', description: 'description', image: 'images.0.src', stock: 'stock_quantity' } as const
 
 /**
- * Vendor shape — structurally identical to litekart-connector's `Vendor`
- * (src/types/vendor-types.ts). Declared locally because the WooCommerce connector's
- * src/types/index.ts does not export one.
+ * Vendor shape — structurally identical to the storefront contract's `Vendor`.
+ * Declared locally because the WooCommerce connector's src/types/index.ts does
+ * not export one.
  */
 export type WooVendor = {
   id: string
@@ -72,7 +72,7 @@ const num = (v: unknown): number => {
 }
 
 /**
- * VendorService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * VendorService — WooCommerce. Signatures mirror the storefront contract.
  *
  * WooCommerce core is SINGLE-VENDOR: one install is one store, and there is no vendor
  * resource in /wp-json/wc/v3, the Store API or WP core. Multi-vendor comes from Dokan

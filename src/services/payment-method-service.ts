@@ -2,7 +2,7 @@ import type { PaginatedResponse } from '../types'
 import { WooBaseService } from './cart-service'
 
 /**
- * PaymentMethodService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * PaymentMethodService — WooCommerce. Signatures mirror the storefront contract.
  *
  * GET /wp-json/wc/v3/payment_gateways
  * https://woocommerce.github.io/woocommerce-rest-api-docs/#list-all-payment-gateways
@@ -16,7 +16,7 @@ import { WooBaseService } from './cart-service'
  * coupons are considered — are on Store API GET /cart -> payment_methods.
  */
 
-/** litekart's PaymentMethod shape, filled from a WooCommerce gateway. */
+/** The storefront's PaymentMethod shape, filled from a WooCommerce gateway. */
 export type PaymentMethod = {
   id: string
   name: string

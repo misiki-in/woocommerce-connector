@@ -2,7 +2,7 @@ import type { PaginatedResponse } from '../types'
 import { BaseService } from './base.service'
 
 /**
- * WishlistService — WooCommerce. Signatures mirror @misiki/litekart-connector.
+ * WishlistService — WooCommerce. Signatures mirror the storefront contract.
  *
  * ALL METHODS ARE PLACEHOLDERS. WooCommerce has no wishlist anywhere: not in
  * /wp-json/wc/v3, not in the Store API (/wp-json/wc/store/v1) and not in WP core

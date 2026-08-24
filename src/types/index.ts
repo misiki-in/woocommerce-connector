@@ -1,5 +1,5 @@
 /**
- * Response types — mirrored from @misiki/litekart-connector so kitcommerce-core
+ * Response types — mirrored from the storefront contract so kitcommerce-core
  * receives exactly the shapes it expects. Vendor payloads are mapped into these.
  */
 
